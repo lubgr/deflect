@@ -1,0 +1,393 @@
+package bvp
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"slices"
+
+	"github.com/lubgr/deflect/elmt"
+	"github.com/lubgr/deflect/xyz"
+)
+
+type matDescription struct {
+	Kind      string
+	Parameter map[string]float64
+}
+
+type csDescription struct {
+	Kind      string
+	Parameter map[string]float64
+}
+
+type nodalValues map[string]float64
+
+type dirichletAngularLink struct {
+	From  string
+	To    string
+	Angle float64
+}
+
+// neumannDescription is a simplistic sum type, where nothing enforces that is isn't used as a
+// product type. Should be ok, as it's used in a very small scope.
+type neumannDescription struct {
+	// When Nodal is populated, a nodal Neumann BC is described.
+	Nodal map[string]float64
+	// When Nodal is not populated, we have an element Neumann BC.
+	Element struct {
+		Kind     string
+		Degree   string
+		Values   []float64
+		Position []float64
+	}
+}
+
+func (nd *neumannDescription) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" || len(data) == 0 {
+		return nil
+	}
+
+	var tmp map[string]any
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return fmt.Errorf("failed to unmarshal Neumann BC JSON: %w", err)
+	}
+
+	_, elementHint1 := tmp["kind"].(string)
+	_, elementHint2 := tmp["degree"].(string)
+
+	if elementHint1 && elementHint2 {
+		return json.Unmarshal(data, &nd.Element)
+	}
+
+	return json.Unmarshal(data, &nd.Nodal)
+}
+
+type elmtDescription struct {
+	Kind     string
+	Nodes    []string
+	CS       string
+	Material string
+	// Disjoint maps node IDs to a sequence of string representations of degrees of freedoms that are
+	// hinged. Example: {"A": ["Ux"], "B", ["Uz", "Phiy"]}.
+	Disjoint map[string][]string
+}
+
+// FromJSON parses the given JSON data and constructs a boundary value problem from it.
+func FromJSON(data []byte) (Problem, error) {
+	var tmp struct {
+		Nodes        map[string][3]float64
+		Material     map[string]matDescription
+		Crosssection map[string]csDescription
+		Elements     map[string]elmtDescription
+		Dirichlet    map[string][]nodalValues
+		Links        map[string][]dirichletAngularLink
+		Neumann      map[string][]neumannDescription
+	}
+
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return Problem{}, fmt.Errorf("couldn't build Bvp from JSON: %w", err)
+	}
+
+	cs, errCS := translateCrossSections(tmp.Crosssection)
+	materials, errMaterials := translateMaterials(tmp.Material)
+
+	if err := errors.Join(errCS, errMaterials); err != nil {
+		return Problem{}, fmt.Errorf("couldn't build CS/material maps: %w", err)
+	}
+
+	nodes := translateNodes(tmp.Nodes)
+	lookup := matLookupFct(materials, cs)
+	elements, errElements := translateElements(tmp.Elements, nodes, lookup)
+	if errElements != nil {
+		return Problem{}, fmt.Errorf(
+			"couldn't construct element instances: %w",
+			errElements,
+		)
+	}
+
+	dirichletBCs, errDirichlet := translateDirichletBCs(tmp.Dirichlet, nodes)
+	neumannNodalBCs, errNeumann := translateNodalNeumannBCs(tmp.Neumann, nodes)
+	links, linkBCs, errLinks := translateAngularLinks(tmp.Links, nodes)
+
+	if err := errors.Join(errDirichlet, errNeumann, errLinks); err != nil {
+		return Problem{}, fmt.Errorf("couldn't construct BCs: %w", err)
+	}
+
+	result := Problem{
+		Nodes:        nodes,
+		Elements:     elements,
+		Dirichlet:    append(dirichletBCs, linkBCs...),
+		Neumann:      neumannNodalBCs,
+		EqTransforms: links,
+	}
+
+	return result, nil
+}
+
+func translateNodes(from map[string][3]float64) []xyz.Node {
+	nodes := make([]xyz.Node, 0, len(from))
+	for id, coor := range from {
+		nodes = append(nodes, xyz.Node{ID: id, X: coor[0], Y: coor[1], Z: coor[2]})
+	}
+	return nodes
+}
+
+func matLookupFct(
+	mats map[string]elmt.LinearElastic,
+	css map[string]elmt.CrossSection,
+) func(string, string) (elmt.Material, error) {
+	return func(mat, cs string) (elmt.Material, error) {
+		result := elmt.Material{}
+		var okMat, okCS bool
+
+		result.LinearElastic, okMat = mats[mat]
+		result.CrossSection, okCS = css[cs]
+
+		if !okMat {
+			return result, fmt.Errorf("material '%v' not found", mat)
+		}
+		if !okCS {
+			return result, fmt.Errorf("cross section '%v' not found", cs)
+		}
+
+		return result, nil
+	}
+}
+
+func translateElements(
+	from map[string]elmtDescription,
+	nodes []xyz.Node,
+	material func(string, string) (elmt.Material, error),
+) ([]elmt.Element, error) {
+	elements := make([]elmt.Element, 0, len(from))
+
+	for id, desc := range from {
+		mat, errLookup := material(desc.Material, desc.CS)
+		if errLookup != nil {
+			return elements, errLookup
+		}
+
+		if desc.Kind == "truss2d" {
+			n0, n1, errNodes := determineNodes(id, desc.Nodes, nodes)
+			disjoint, errDisjoint := determineDisjoints(desc.Disjoint, n0.ID, n1.ID)
+			truss, errCreate := elmt.NewTruss2d(id, n0, n1, &mat, disjoint)
+
+			if err := errors.Join(errNodes, errDisjoint, errCreate); err != nil {
+				return elements, err
+			}
+
+			elements = append(elements, truss)
+		}
+	}
+
+	return elements, nil
+}
+
+// determineNodes looks up pointers to nodes from the given slice of nodes, using either nodeIDs
+// when it's of length 2 or the elmtID string, which is then expected to be a two-character string.
+// Valid examples:
+// - elmtID is "DF", nodeIDs is [], and there are {"D", x1, y1, z1} and {"F", x2, y2, z2} in nodes
+// - elmtID is "1234", nodeIDs is ["D", "F"], and there are {"D", ...} and {"F", ...} in nodes
+// Note that we could be more efficient by maintaining the nodes in a hash map using their IDs. We
+// should do this once this linear lookup shows up in a profile.
+func determineNodes(
+	elmtID string,
+	nodeIDs []string,
+	nodes []xyz.Node,
+) (*xyz.Node, *xyz.Node, error) {
+	if len(nodeIDs) == 2 {
+		n0, err0 := scanForNode(nodeIDs[0], nodes)
+		n1, err1 := scanForNode(nodeIDs[1], nodes)
+		return n0, n1, errors.Join(err0, err1)
+	} else if len(nodeIDs) > 0 {
+		return nil, nil, fmt.Errorf("expected node ID slice of length 0 or 2, got %v IDs", len(nodeIDs))
+	}
+
+	if len(elmtID) != 2 {
+		return nil, nil, fmt.Errorf(
+			"can't infer connected node IDs from element ID '%v' (need 2 chars)",
+			elmtID,
+		)
+	}
+
+	n0, n1 := string(elmtID[0]), string(elmtID[1])
+	return determineNodes(elmtID, []string{n0, n1}, nodes)
+}
+
+func scanForNode(nodeID string, nodes []xyz.Node) (*xyz.Node, error) {
+	idx := slices.IndexFunc(nodes, func(n xyz.Node) bool { return n.ID == nodeID })
+	if idx == -1 {
+		return nil, fmt.Errorf("nodal ID '%v' not found in sequence of %v nodes", nodeID, len(nodes))
+	}
+	return &nodes[idx], nil
+}
+
+func determineDisjoints(from map[string][]string, n0, n1 string) (elmt.Truss2dDisjoint, error) {
+	idx0 := slices.Index(from[n0], "Ux")
+	idx1 := slices.Index(from[n1], "Ux")
+
+	switch {
+	case idx0 != -1 && idx1 != -1:
+		return elmt.Truss2dDisjointNone,
+			fmt.Errorf("only a single Ux entry makes sense in a 2d truss disjoint description")
+	case idx0 != -1:
+		return elmt.Truss2dDisjointFirstNode, nil
+	case idx1 != -1:
+		return elmt.Truss2dDisjointSecondNode, nil
+	default:
+		return elmt.Truss2dDisjointNone, nil
+	}
+}
+
+func translateMaterials(from map[string]matDescription) (map[string]elmt.LinearElastic, error) {
+	materials := map[string]elmt.LinearElastic{}
+
+	for id, desc := range from {
+		E, found0 := desc.Parameter["E"]
+		nu, found1 := desc.Parameter["nu"]
+		rho, found2 := desc.Parameter["rho"]
+
+		if !found0 || !found1 || !found2 {
+			return materials, fmt.Errorf("material parameters 'E', 'nu', and/or 'rho' not found")
+		}
+
+		materials[id] = elmt.LinearElastic{
+			YoungsModulus: E,
+			PoissonsRatio: nu,
+			Density:       rho,
+		}
+	}
+
+	return materials, nil
+}
+
+func translateCrossSections(from map[string]csDescription) (map[string]elmt.CrossSection, error) {
+	cs := map[string]elmt.CrossSection{}
+
+	for id, desc := range from {
+		if desc.Kind != "rectangle" {
+			return cs, fmt.Errorf("unsupported cross section '%v'", desc.Kind)
+		}
+
+		b, found0 := desc.Parameter["b"]
+		h, found1 := desc.Parameter["h"]
+
+		if !found0 || !found1 {
+			return cs, fmt.Errorf("cross section parameters 'b', and/or 'h' not found")
+		}
+
+		rect, err := elmt.NewRectangularCrossSection(b, h)
+
+		if err != nil {
+			return cs, fmt.Errorf("create rectangular cross section: %w", err)
+		}
+
+		cs[id] = rect
+	}
+
+	return cs, nil
+}
+
+func translateDirichletBCs(
+	from map[string][]nodalValues,
+	nodes []xyz.Node,
+) ([]NodalValue, error) {
+	dofs := map[string]xyz.Dof{
+		"Ux":   xyz.Ux,
+		"Uz":   xyz.Uz,
+		"Uy":   xyz.Uy,
+		"Phiy": xyz.Phiy,
+		"Phiz": xyz.Phiz,
+		"Phix": xyz.Phix,
+	}
+	result := make([]NodalValue, 0, len(from))
+	var err error
+
+	for nodeID, dofDescriptions := range from {
+		for _, dofToValue := range dofDescriptions {
+			for dofName, value := range dofToValue {
+				dof, ok := dofs[dofName]
+
+				if !ok {
+					err = errors.Join(err, fmt.Errorf("unknown degree of freedom '%v'", dofName))
+					continue
+				}
+
+				index := xyz.Index{NodalID: nodeID, Dof: dof}
+				result = append(result, NodalValue{Index: index, Value: value})
+			}
+		}
+	}
+
+	return result, err
+}
+
+func translateNodalNeumannBCs(
+	from map[string][]neumannDescription,
+	nodes []xyz.Node,
+) ([]NodalValue, error) {
+	dofs := map[string]xyz.Dof{
+		"Fx": xyz.Ux,
+		"Fz": xyz.Uz,
+		"Fy": xyz.Uy,
+		"My": xyz.Phiy,
+		"Mz": xyz.Phiz,
+		"Mx": xyz.Phix,
+	}
+	result := make([]NodalValue, 0, len(from))
+	var err error
+
+	for nodeID, neumannDesc := range from {
+		for _, desc := range neumannDesc {
+			// When the object describes an element Neumann BC, the sequence is empty.
+			for name, value := range desc.Nodal {
+				dof, ok := dofs[name]
+
+				if !ok {
+					err = errors.Join(err, fmt.Errorf("unknown Neumann BC type '%v'", name))
+					continue
+				}
+
+				index := xyz.Index{NodalID: nodeID, Dof: dof}
+				result = append(result, NodalValue{Index: index, Value: value})
+			}
+		}
+	}
+
+	return result, err
+}
+
+func translateAngularLinks(
+	from map[string][]dirichletAngularLink,
+	nodes []xyz.Node,
+) (links []Transformer, bcs []NodalValue, err error) {
+	dofs := map[string]xyz.Dof{
+		"Ux": xyz.Ux,
+		"Uz": xyz.Uz,
+		"Uy": xyz.Uy,
+	}
+	links = make([]Transformer, 0, len(from))
+	bcs = make([]NodalValue, 0, len(from))
+
+	for nodeID, linkDesc := range from {
+		for _, desc := range linkDesc {
+			dofFrom, okFrom := dofs[desc.From]
+			dofTo, okTo := dofs[desc.To]
+
+			if !(okFrom && okTo) {
+				err = errors.Join(
+					err,
+					fmt.Errorf("unknown angular displacement BC type '%v' or '%v'", desc.From, desc.To),
+				)
+				continue
+			}
+
+			fromIndex := xyz.Index{NodalID: nodeID, Dof: dofFrom}
+			toIndex := xyz.Index{NodalID: nodeID, Dof: dofTo}
+			links = append(links, NewAngularLinkTransformer(fromIndex, toIndex, desc.Angle))
+			bcs = append(bcs, NodalValue{Index: toIndex, Value: 0})
+		}
+	}
+
+	return links, bcs, err
+}

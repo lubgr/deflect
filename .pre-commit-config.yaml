@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/segmentio/golines
+    rev: v0.12.2
+    hooks:
+      - id: golines
+        args: [-m, '100', -t, '2']
+  - repo: https://github.com/lubgr/go-hooks
+    rev: v0.1.1
+    hooks:
+      - id: goimports
+      - id: build
+        fail_fast: true
+      - id: test
+        args: [-cover, -race, ./...]
+      - id: vet
+      - id: mod-tidy
+      - id: staticcheck
+        language_version: 1.22.0
+      - id: errcheck
+        args: [-ignoretests, -blank, ./...]
+        language_version: 1.22.0
+      - id: godot
+      - id: revive
+        args: [-config, .revive-config.toml, ./...]
+      - id: go-critic
+        args: [check,
+          '-enable=#diagnostic,#performance,#style,emptyStringTest',
+          '-disable=unnamedResult',
+          ./...]
+      - id: errname
+      - id: ineffassign
+  - repo: https://github.com/google/go-jsonnet
+    rev: v0.20.0
+    hooks:
+      - id: jsonnet-format
