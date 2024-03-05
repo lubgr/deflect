@@ -2,13 +2,6 @@ package deflect
 
 import "fmt"
 
-// CrossSection provides access to all relevant geometric properties of a beam, truss, or frame
-// cross section.
-type CrossSection interface {
-	// Area returns the cross section's area in m^2
-	Area() float64
-}
-
 type rectangular struct {
 	b, h float64
 }
