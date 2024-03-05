@@ -1,4 +1,4 @@
-package elmt
+package deflect
 
 // Material defines the API to retrieve material parameters to be used in element formulations. We
 // currently restrain ourselves to linear-elastic materials, and the constant material parameters

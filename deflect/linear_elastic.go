@@ -1,4 +1,4 @@
-package elmt
+package deflect
 
 // LinearElastic "implements" a linear-elastic material law by providing access to required material
 // parameters. This does not encapsulate or abstract away the actual material law - an element

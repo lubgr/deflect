@@ -1,13 +1,10 @@
-package bvp
+package deflect
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
-
-	"github.com/lubgr/deflect/elmt"
-	"github.com/lubgr/deflect/xyz"
 )
 
 type matDescription struct {
@@ -124,20 +121,20 @@ func FromJSON(data []byte) (Problem, error) {
 	return result, nil
 }
 
-func translateNodes(from map[string][3]float64) []xyz.Node {
-	nodes := make([]xyz.Node, 0, len(from))
+func translateNodes(from map[string][3]float64) []Node {
+	nodes := make([]Node, 0, len(from))
 	for id, coor := range from {
-		nodes = append(nodes, xyz.Node{ID: id, X: coor[0], Y: coor[1], Z: coor[2]})
+		nodes = append(nodes, Node{ID: id, X: coor[0], Y: coor[1], Z: coor[2]})
 	}
 	return nodes
 }
 
 func matLookupFct(
-	mats map[string]elmt.LinearElastic,
-	css map[string]elmt.CrossSection,
-) func(string, string) (elmt.Material, error) {
-	return func(mat, cs string) (elmt.Material, error) {
-		result := elmt.Material{}
+	mats map[string]LinearElastic,
+	css map[string]CrossSection,
+) func(string, string) (Material, error) {
+	return func(mat, cs string) (Material, error) {
+		result := Material{}
 		var okMat, okCS bool
 
 		result.LinearElastic, okMat = mats[mat]
@@ -156,10 +153,10 @@ func matLookupFct(
 
 func translateElements(
 	from map[string]elmtDescription,
-	nodes []xyz.Node,
-	material func(string, string) (elmt.Material, error),
-) ([]elmt.Element, error) {
-	elements := make([]elmt.Element, 0, len(from))
+	nodes []Node,
+	material func(string, string) (Material, error),
+) ([]Element, error) {
+	elements := make([]Element, 0, len(from))
 
 	for id, desc := range from {
 		mat, errLookup := material(desc.Material, desc.CS)
@@ -170,7 +167,7 @@ func translateElements(
 		if desc.Kind == "truss2d" {
 			n0, n1, errNodes := determineNodes(id, desc.Nodes, nodes)
 			disjoint, errDisjoint := determineDisjoints(desc.Disjoint, n0.ID, n1.ID)
-			truss, errCreate := elmt.NewTruss2d(id, n0, n1, &mat, disjoint)
+			truss, errCreate := NewTruss2d(id, n0, n1, &mat, disjoint)
 
 			if err := errors.Join(errNodes, errDisjoint, errCreate); err != nil {
 				return elements, err
@@ -193,8 +190,8 @@ func translateElements(
 func determineNodes(
 	elmtID string,
 	nodeIDs []string,
-	nodes []xyz.Node,
-) (*xyz.Node, *xyz.Node, error) {
+	nodes []Node,
+) (*Node, *Node, error) {
 	if len(nodeIDs) == 2 {
 		n0, err0 := scanForNode(nodeIDs[0], nodes)
 		n1, err1 := scanForNode(nodeIDs[1], nodes)
@@ -214,33 +211,33 @@ func determineNodes(
 	return determineNodes(elmtID, []string{n0, n1}, nodes)
 }
 
-func scanForNode(nodeID string, nodes []xyz.Node) (*xyz.Node, error) {
-	idx := slices.IndexFunc(nodes, func(n xyz.Node) bool { return n.ID == nodeID })
+func scanForNode(nodeID string, nodes []Node) (*Node, error) {
+	idx := slices.IndexFunc(nodes, func(n Node) bool { return n.ID == nodeID })
 	if idx == -1 {
 		return nil, fmt.Errorf("nodal ID '%v' not found in sequence of %v nodes", nodeID, len(nodes))
 	}
 	return &nodes[idx], nil
 }
 
-func determineDisjoints(from map[string][]string, n0, n1 string) (elmt.Truss2dDisjoint, error) {
+func determineDisjoints(from map[string][]string, n0, n1 string) (Truss2dDisjoint, error) {
 	idx0 := slices.Index(from[n0], "Ux")
 	idx1 := slices.Index(from[n1], "Ux")
 
 	switch {
 	case idx0 != -1 && idx1 != -1:
-		return elmt.Truss2dDisjointNone,
+		return Truss2dDisjointNone,
 			fmt.Errorf("only a single Ux entry makes sense in a 2d truss disjoint description")
 	case idx0 != -1:
-		return elmt.Truss2dDisjointFirstNode, nil
+		return Truss2dDisjointFirstNode, nil
 	case idx1 != -1:
-		return elmt.Truss2dDisjointSecondNode, nil
+		return Truss2dDisjointSecondNode, nil
 	default:
-		return elmt.Truss2dDisjointNone, nil
+		return Truss2dDisjointNone, nil
 	}
 }
 
-func translateMaterials(from map[string]matDescription) (map[string]elmt.LinearElastic, error) {
-	materials := map[string]elmt.LinearElastic{}
+func translateMaterials(from map[string]matDescription) (map[string]LinearElastic, error) {
+	materials := map[string]LinearElastic{}
 
 	for id, desc := range from {
 		E, found0 := desc.Parameter["E"]
@@ -251,7 +248,7 @@ func translateMaterials(from map[string]matDescription) (map[string]elmt.LinearE
 			return materials, fmt.Errorf("material parameters 'E', 'nu', and/or 'rho' not found")
 		}
 
-		materials[id] = elmt.LinearElastic{
+		materials[id] = LinearElastic{
 			YoungsModulus: E,
 			PoissonsRatio: nu,
 			Density:       rho,
@@ -261,8 +258,8 @@ func translateMaterials(from map[string]matDescription) (map[string]elmt.LinearE
 	return materials, nil
 }
 
-func translateCrossSections(from map[string]csDescription) (map[string]elmt.CrossSection, error) {
-	cs := map[string]elmt.CrossSection{}
+func translateCrossSections(from map[string]csDescription) (map[string]CrossSection, error) {
+	cs := map[string]CrossSection{}
 
 	for id, desc := range from {
 		if desc.Kind != "rectangle" {
@@ -276,7 +273,7 @@ func translateCrossSections(from map[string]csDescription) (map[string]elmt.Cros
 			return cs, fmt.Errorf("cross section parameters 'b', and/or 'h' not found")
 		}
 
-		rect, err := elmt.NewRectangularCrossSection(b, h)
+		rect, err := NewRectangularCrossSection(b, h)
 
 		if err != nil {
 			return cs, fmt.Errorf("create rectangular cross section: %w", err)
@@ -290,15 +287,15 @@ func translateCrossSections(from map[string]csDescription) (map[string]elmt.Cros
 
 func translateDirichletBCs(
 	from map[string][]nodalValues,
-	nodes []xyz.Node,
+	nodes []Node,
 ) ([]NodalValue, error) {
-	dofs := map[string]xyz.Dof{
-		"Ux":   xyz.Ux,
-		"Uz":   xyz.Uz,
-		"Uy":   xyz.Uy,
-		"Phiy": xyz.Phiy,
-		"Phiz": xyz.Phiz,
-		"Phix": xyz.Phix,
+	dofs := map[string]Dof{
+		"Ux":   Ux,
+		"Uz":   Uz,
+		"Uy":   Uy,
+		"Phiy": Phiy,
+		"Phiz": Phiz,
+		"Phix": Phix,
 	}
 	result := make([]NodalValue, 0, len(from))
 	var err error
@@ -313,7 +310,7 @@ func translateDirichletBCs(
 					continue
 				}
 
-				index := xyz.Index{NodalID: nodeID, Dof: dof}
+				index := Index{NodalID: nodeID, Dof: dof}
 				result = append(result, NodalValue{Index: index, Value: value})
 			}
 		}
@@ -324,15 +321,15 @@ func translateDirichletBCs(
 
 func translateNodalNeumannBCs(
 	from map[string][]neumannDescription,
-	nodes []xyz.Node,
+	nodes []Node,
 ) ([]NodalValue, error) {
-	dofs := map[string]xyz.Dof{
-		"Fx": xyz.Ux,
-		"Fz": xyz.Uz,
-		"Fy": xyz.Uy,
-		"My": xyz.Phiy,
-		"Mz": xyz.Phiz,
-		"Mx": xyz.Phix,
+	dofs := map[string]Dof{
+		"Fx": Ux,
+		"Fz": Uz,
+		"Fy": Uy,
+		"My": Phiy,
+		"Mz": Phiz,
+		"Mx": Phix,
 	}
 	result := make([]NodalValue, 0, len(from))
 	var err error
@@ -348,7 +345,7 @@ func translateNodalNeumannBCs(
 					continue
 				}
 
-				index := xyz.Index{NodalID: nodeID, Dof: dof}
+				index := Index{NodalID: nodeID, Dof: dof}
 				result = append(result, NodalValue{Index: index, Value: value})
 			}
 		}
@@ -359,12 +356,12 @@ func translateNodalNeumannBCs(
 
 func translateAngularLinks(
 	from map[string][]dirichletAngularLink,
-	nodes []xyz.Node,
+	nodes []Node,
 ) (links []Transformer, bcs []NodalValue, err error) {
-	dofs := map[string]xyz.Dof{
-		"Ux": xyz.Ux,
-		"Uz": xyz.Uz,
-		"Uy": xyz.Uy,
+	dofs := map[string]Dof{
+		"Ux": Ux,
+		"Uz": Uz,
+		"Uy": Uy,
 	}
 	links = make([]Transformer, 0, len(from))
 	bcs = make([]NodalValue, 0, len(from))
@@ -382,8 +379,8 @@ func translateAngularLinks(
 				continue
 			}
 
-			fromIndex := xyz.Index{NodalID: nodeID, Dof: dofFrom}
-			toIndex := xyz.Index{NodalID: nodeID, Dof: dofTo}
+			fromIndex := Index{NodalID: nodeID, Dof: dofFrom}
+			toIndex := Index{NodalID: nodeID, Dof: dofTo}
 			links = append(links, NewAngularLinkTransformer(fromIndex, toIndex, desc.Angle))
 			bcs = append(bcs, NodalValue{Index: toIndex, Value: 0})
 		}

@@ -1,20 +1,18 @@
-package bvp
+package deflect
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strings"
-
-	"github.com/lubgr/deflect/elmt"
-	"github.com/lubgr/deflect/xyz"
 )
 
 // IndexLayout stores the mapping between symbolic and integral matrix indices. This is used for
 // elements and boundary conditions to know where in the global matrices/vectors they should add
 // their coefficients during assembly.
 type IndexLayout struct {
-	indices map[xyz.Index]int
-	inverse []xyz.Index
+	indices map[Index]int
+	inverse []Index
 }
 
 // NewIndexLayout creates a new index layout for the given boundary value problem.
@@ -30,9 +28,9 @@ func NewIndexLayout(p *Problem) (IndexLayout, error) {
 
 // IndexMap constructs the mapping from symbolic to plain matrix indices. It returns an error when
 // there are duplicate Dirichlet indices.
-func createIndexMap(elements []elmt.Element, dirichlet []NodalValue) (map[xyz.Index]int, error) {
-	indices := map[xyz.Index]struct{}{}
-	constrained := map[xyz.Index]struct{}{}
+func createIndexMap(elements []Element, dirichlet []NodalValue) (map[Index]int, error) {
+	indices := map[Index]struct{}{}
+	constrained := map[Index]struct{}{}
 	var duplicates []string
 
 	for _, d := range dirichlet {
@@ -61,10 +59,10 @@ func createIndexMap(elements []elmt.Element, dirichlet []NodalValue) (map[xyz.In
 // constraints. Constrained symbolic indices have plain top/left matrix indices, unconstrained ones
 // right/bottom.
 func freeAndConstraintsToIndices(
-	free map[xyz.Index]struct{},
-	constrained map[xyz.Index]struct{},
-) map[xyz.Index]int {
-	indices := make([]xyz.Index, 0, len(free))
+	free map[Index]struct{},
+	constrained map[Index]struct{},
+) map[Index]int {
+	indices := make([]Index, 0, len(free))
 
 	for index := range constrained {
 		indices = append(indices, index)
@@ -77,10 +75,10 @@ func freeAndConstraintsToIndices(
 	}
 
 	part := len(constrained)
-	slices.SortFunc(indices[0:part], xyz.CompareIndices)
-	slices.SortFunc(indices[part:], xyz.CompareIndices)
+	slices.SortFunc(indices[0:part], compareIndices)
+	slices.SortFunc(indices[part:], compareIndices)
 
-	result := make(map[xyz.Index]int)
+	result := make(map[Index]int)
 
 	for i, index := range indices {
 		result[index] = i
@@ -89,12 +87,21 @@ func freeAndConstraintsToIndices(
 	return result
 }
 
-func invertIndexMap(from map[xyz.Index]int) []xyz.Index {
-	to := make([]xyz.Index, len(from))
+func invertIndexMap(from map[Index]int) []Index {
+	to := make([]Index, len(from))
 
 	for symbolic, plain := range from {
 		to[plain] = symbolic
 	}
 
 	return to
+}
+
+// compareIndices compares to Index instances in the spirit of [cmd.Compare].
+func compareIndices(i, j Index) int {
+	if ids := cmp.Compare(i.NodalID, j.NodalID); ids != 0 {
+		return ids
+	}
+
+	return cmp.Compare(string(i.Dof), string(j.Dof))
 }

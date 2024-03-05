@@ -9,7 +9,7 @@ import (
 	"unsafe"
 
 	"github.com/google/go-jsonnet"
-	"github.com/lubgr/deflect/bvp"
+	"github.com/lubgr/deflect/deflect"
 )
 
 func TestIntegration(t *testing.T) {
@@ -101,14 +101,14 @@ func extractName(input []byte, t *testing.T) string {
 func runTestCase(input []byte, t *testing.T) {
 	// Parsing is split into two phases. That's not the most efficient way, but it allows a cleaner
 	// separation of concerns. Parsing of expectations happens only in tests anyhow.
-	problem, errProblem := bvp.FromJSON(input)
+	problem, errProblem := deflect.FromJSON(input)
 	expect, errExpect := ExpectFromJSON(input)
 
 	if err := errors.Join(errProblem, errExpect); err != nil {
 		t.Fatalf("Failed to build BVP/expectations from JSON: %v", err)
 	}
 
-	layout, err := bvp.NewIndexLayout(&problem)
+	layout, err := deflect.NewIndexLayout(&problem)
 
 	if err != nil {
 		for _, e := range expect {
@@ -117,8 +117,8 @@ func runTestCase(input []byte, t *testing.T) {
 		return
 	}
 
-	solver := bvp.NewLinearProblemSolver()
-	primary, secondary, err := solver.Solve(&problem, layout, bvp.NewCholeskySolver())
+	solver := deflect.NewLinearProblemSolver()
+	primary, secondary, err := solver.Solve(&problem, layout, deflect.NewCholeskySolver())
 
 	for _, e := range expect {
 		e.Failure(err, t)

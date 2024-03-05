@@ -1,31 +1,21 @@
-package bvp
+package deflect
 
 import (
 	"fmt"
 	"log"
 	"math"
 
-	"github.com/lubgr/deflect/xyz"
 	"gonum.org/v1/gonum/mat"
 )
 
-// Transformer mutate the system of equation before and after it is solved. For example, an inclined
-// support can be split into a Transformer and a Dirichlet BC, such that they act independently to
-// link degrees of freedom through a trigonometric relation. Transformer instances don't prescribe
-// values in rhs or primary (this is done by NodalBC instances).
-type Transformer interface {
-	Pre(indices map[xyz.Index]int, k *mat.SymDense, rhs, primary *mat.VecDense) error
-	Post(indices map[xyz.Index]int, rhs, primary *mat.VecDense) error
-}
-
 // NewAngularLinkTransformer instantiates a transformer to represent an inclined support to link
 // displacements through an angle.
-func NewAngularLinkTransformer(from, to xyz.Index, angle float64) Transformer {
+func NewAngularLinkTransformer(from, to Index, angle float64) Transformer {
 	return &angularLink{from: from, to: to, c: math.Cos(angle), s: math.Sin(angle), irow: nil}
 }
 
 type angularLink struct {
-	from, to   xyz.Index
+	from, to   Index
 	c, s       float64
 	irow, jrow *mat.VecDense
 }
@@ -38,7 +28,7 @@ const (
 )
 
 func (l *angularLink) Pre(
-	indices map[xyz.Index]int,
+	indices map[Index]int,
 	k *mat.SymDense,
 	rhs, primary *mat.VecDense,
 ) error {
@@ -63,7 +53,7 @@ func (l *angularLink) Pre(
 	return nil
 }
 
-func (l *angularLink) Post(indices map[xyz.Index]int, rhs, primary *mat.VecDense) error {
+func (l *angularLink) Post(indices map[Index]int, rhs, primary *mat.VecDense) error {
 	// No need to check for the initialisation of l's bufffers, since l.Pre must have been called
 	// before l.Post, and l.Pre would initialise them.
 	i, j, err := l.mapWithErr(indices)
@@ -78,7 +68,7 @@ func (l *angularLink) Post(indices map[xyz.Index]int, rhs, primary *mat.VecDense
 	return nil
 }
 
-func (l *angularLink) mapWithErr(indices map[xyz.Index]int) (from, to int, err error) {
+func (l *angularLink) mapWithErr(indices map[Index]int) (from, to int, err error) {
 	var ok bool
 
 	if from, ok = indices[l.from]; !ok {

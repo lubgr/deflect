@@ -1,10 +1,9 @@
-package elmt
+package deflect
 
 import (
 	"errors"
 	"fmt"
 
-	"github.com/lubgr/deflect/xyz"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/spatial/r3"
 )
@@ -21,12 +20,12 @@ const (
 
 type truss2d struct {
 	id       string
-	n0, n1   *xyz.Node
+	n0, n1   *Node
 	material *Material
 	disjoint Truss2dDisjoint
 }
 
-func (t *truss2d) Assemble(indices map[xyz.Index]int, k *mat.SymDense,
+func (t *truss2d) Assemble(indices map[Index]int, k *mat.SymDense,
 	rhs, primary *mat.VecDense) error {
 	local := t.localTangent()
 	rot := t.rotation()
@@ -63,8 +62,8 @@ func (t *truss2d) Assemble(indices map[xyz.Index]int, k *mat.SymDense,
 	return nil
 }
 
-func (t *truss2d) mappedIndices(lookup map[xyz.Index]int) (int, int, int, int, error) {
-	mapWithErr := func(symbolic xyz.Index) (int, error) {
+func (t *truss2d) mappedIndices(lookup map[Index]int) (int, int, int, int, error) {
+	mapWithErr := func(symbolic Index) (int, error) {
 		plain, ok := lookup[symbolic]
 
 		if !ok {
@@ -83,12 +82,12 @@ func (t *truss2d) mappedIndices(lookup map[xyz.Index]int) (int, int, int, int, e
 	return ux0, uz0, ux1, uz1, errors.Join(err0, err1, err2, err3)
 }
 
-func (t *truss2d) indicesAsArray() *[4]xyz.Index {
-	indices := [...]xyz.Index{
-		{NodalID: t.n0.ID, Dof: xyz.Ux},
-		{NodalID: t.n0.ID, Dof: xyz.Uz},
-		{NodalID: t.n1.ID, Dof: xyz.Ux},
-		{NodalID: t.n1.ID, Dof: xyz.Uz},
+func (t *truss2d) indicesAsArray() *[4]Index {
+	indices := [...]Index{
+		{NodalID: t.n0.ID, Dof: Ux},
+		{NodalID: t.n0.ID, Dof: Uz},
+		{NodalID: t.n1.ID, Dof: Ux},
+		{NodalID: t.n1.ID, Dof: Uz},
 	}
 
 	return &indices
@@ -147,7 +146,7 @@ func (t *truss2d) rotation() *mat.Dense {
 	return r
 }
 
-func (t *truss2d) Indices(set map[xyz.Index]struct{}) {
+func (t *truss2d) Indices(set map[Index]struct{}) {
 	for _, index := range t.indicesAsArray() {
 		set[index] = struct{}{}
 	}
@@ -166,7 +165,7 @@ func (t *truss2d) ID() string {
 // and hinges.
 func NewTruss2d(
 	id string,
-	n0, n1 *xyz.Node,
+	n0, n1 *Node,
 	material *Material,
 	disjoint Truss2dDisjoint) (Element, error) {
 	// Any non-zero length is technically okay (even if not advisable), so use equality here to

@@ -1,4 +1,4 @@
-package elmt
+package deflect
 
 import (
 	"maps"
@@ -6,7 +6,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/lubgr/deflect/xyz"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -19,15 +18,15 @@ var exampleMat = Material{
 	},
 }
 
-func truss2dTestNodes() (n0, n1 *xyz.Node) {
-	n0 = &xyz.Node{ID: "A", X: 0, Z: 0}
-	n1 = &xyz.Node{ID: "B", X: 1, Z: 0}
+func truss2dTestNodes() (n0, n1 *Node) {
+	n0 = &Node{ID: "A", X: 0, Z: 0}
+	n1 = &Node{ID: "B", X: 1, Z: 0}
 	return
 }
 
 func TestTruss2dCtorFailsOnZeroLength(t *testing.T) {
-	n0 := &xyz.Node{ID: "A", X: 2, Y: 3, Z: -5}
-	n1 := &xyz.Node{ID: "B", X: 2, Y: 3, Z: -5}
+	n0 := &Node{ID: "A", X: 2, Y: 3, Z: -5}
+	n1 := &Node{ID: "B", X: 2, Y: 3, Z: -5}
 
 	actual, err := NewTruss2d("AB", n0, n1, &exampleMat, Truss2dDisjointNone)
 
@@ -78,12 +77,12 @@ func TestTruss2dNumNodes(t *testing.T) {
 func TestTruss2dIndexSet(t *testing.T) {
 	n0, n1 := truss2dTestNodes()
 	truss, _ := NewTruss2d("ID", n0, n1, &exampleMat, Truss2dDisjointNone)
-	actual := make(map[xyz.Index]struct{})
-	expected := map[xyz.Index]struct{}{
-		{NodalID: "A", Dof: xyz.Ux}: {},
-		{NodalID: "A", Dof: xyz.Uz}: {},
-		{NodalID: "B", Dof: xyz.Ux}: {},
-		{NodalID: "B", Dof: xyz.Uz}: {},
+	actual := make(map[Index]struct{})
+	expected := map[Index]struct{}{
+		{NodalID: "A", Dof: Ux}: {},
+		{NodalID: "A", Dof: Uz}: {},
+		{NodalID: "B", Dof: Ux}: {},
+		{NodalID: "B", Dof: Uz}: {},
 	}
 
 	truss.Indices(actual)
@@ -129,8 +128,8 @@ func TestTruss2dRotationMatrix(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		n0 := &xyz.Node{ID: "A", X: 2, Z: 2}
-		n1 := &xyz.Node{ID: "B", X: test.x1, Z: test.z1}
+		n0 := &Node{ID: "A", X: 2, Z: 2}
+		n1 := &Node{ID: "B", X: test.x1, Z: test.z1}
 		truss := &truss2d{"ID", n0, n1, &exampleMat, Truss2dDisjointNone}
 		actual := mat.NewVecDense(4, nil)
 		actual.MulVec(truss.rotation(), test.local)
@@ -158,8 +157,8 @@ func TestTruss2dLocalTangent(t *testing.T) {
 
 	for _, test := range tests {
 		// Nodal coordinates are arranged so that the element length is 5
-		n0 := &xyz.Node{ID: "A", X: 13, Z: -5}
-		n1 := &xyz.Node{ID: "B", X: 10, Z: -1}
+		n0 := &Node{ID: "A", X: 13, Z: -5}
+		n1 := &Node{ID: "B", X: 10, Z: -1}
 		material := exampleMat
 		material.YoungsModulus = test.youngs
 		material.CrossSection, _ = NewRectangularCrossSection(test.b, test.h)
@@ -184,16 +183,16 @@ func TestTruss2dFailToMapIndices(t *testing.T) {
 	n0, n1 := truss2dTestNodes()
 	truss := truss2d{"ID", n0, n1, &exampleMat, Truss2dDisjointNone}
 
-	_, _, _, _, err := truss.mappedIndices(make(map[xyz.Index]int))
+	_, _, _, _, err := truss.mappedIndices(make(map[Index]int))
 
 	if err == nil {
 		t.Errorf("Expected index lookup to fail given an empty map")
 	}
 
-	incomplete := map[xyz.Index]int{
-		xyz.Index{NodalID: "A", Dof: xyz.Ux}:   10,
-		xyz.Index{NodalID: "B", Dof: xyz.Ux}:   11,
-		xyz.Index{NodalID: "B", Dof: xyz.Phiy}: 12,
+	incomplete := map[Index]int{
+		Index{NodalID: "A", Dof: Ux}:   10,
+		Index{NodalID: "B", Dof: Ux}:   11,
+		Index{NodalID: "B", Dof: Phiy}: 12,
 	}
 
 	_, _, _, _, err = truss.mappedIndices(incomplete)
@@ -206,11 +205,11 @@ func TestTruss2dFailToMapIndices(t *testing.T) {
 func TestTruss2dMapIndices(t *testing.T) {
 	n0, n1 := truss2dTestNodes()
 	truss := truss2d{"ID", n0, n1, &exampleMat, Truss2dDisjointNone}
-	lookup := map[xyz.Index]int{
-		xyz.Index{NodalID: "A", Dof: xyz.Ux}: 10,
-		xyz.Index{NodalID: "A", Dof: xyz.Uz}: 11,
-		xyz.Index{NodalID: "B", Dof: xyz.Ux}: 12,
-		xyz.Index{NodalID: "B", Dof: xyz.Uz}: 13,
+	lookup := map[Index]int{
+		Index{NodalID: "A", Dof: Ux}: 10,
+		Index{NodalID: "A", Dof: Uz}: 11,
+		Index{NodalID: "B", Dof: Ux}: 12,
+		Index{NodalID: "B", Dof: Uz}: 13,
 	}
 
 	i, j, k, l, err := truss.mappedIndices(lookup)

@@ -9,26 +9,25 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lubgr/deflect/bvp"
-	"github.com/lubgr/deflect/xyz"
+	"github.com/lubgr/deflect/deflect"
 	"gonum.org/v1/gonum/floats/scalar"
 )
 
 // Expectation offers an interface for integration tests to run assertions after solving a boundary
 // value problem.
 type Expectation interface {
-	Primary(d []bvp.NodalValue, t *testing.T)
-	Reaction(r []bvp.NodalValue, t *testing.T)
+	Primary(d []deflect.NodalValue, t *testing.T)
+	Reaction(r []deflect.NodalValue, t *testing.T)
 	Failure(err error, t *testing.T)
 	Interpolation(t *testing.T)
 }
 
 type noopExpectation struct{}
 
-func (e *noopExpectation) Primary(d []bvp.NodalValue, t *testing.T)  {}
-func (e *noopExpectation) Reaction(r []bvp.NodalValue, t *testing.T) {}
-func (e *noopExpectation) Interpolation(t *testing.T)                {}
-func (e *noopExpectation) Failure(err error, t *testing.T)           {}
+func (e *noopExpectation) Primary(d []deflect.NodalValue, t *testing.T)  {}
+func (e *noopExpectation) Reaction(r []deflect.NodalValue, t *testing.T) {}
+func (e *noopExpectation) Interpolation(t *testing.T)                    {}
+func (e *noopExpectation) Failure(err error, t *testing.T)               {}
 
 type noFailureExpectation struct {
 	noopExpectation
@@ -63,26 +62,29 @@ func (e *regexFailureExpectation) Failure(err error, t *testing.T) {
 
 type nodalExpectation struct {
 	noopExpectation
-	primary   []bvp.NodalValue
-	reactions []bvp.NodalValue
+	primary   []deflect.NodalValue
+	reactions []deflect.NodalValue
 }
 
-func (e *nodalExpectation) Reaction(r []bvp.NodalValue, t *testing.T) {
+func (e *nodalExpectation) Reaction(r []deflect.NodalValue, t *testing.T) {
 	t.Helper()
 	e.nodal("reaction", r, e.reactions, t)
 }
 
-func (e *nodalExpectation) Primary(d []bvp.NodalValue, t *testing.T) {
+func (e *nodalExpectation) Primary(d []deflect.NodalValue, t *testing.T) {
 	t.Helper()
 	e.nodal("primary", d, e.primary, t)
 }
 
-func (e *nodalExpectation) nodal(desc string, actual, expected []bvp.NodalValue, t *testing.T) {
+func (e *nodalExpectation) nodal(desc string, actual, expected []deflect.NodalValue, t *testing.T) {
 	t.Helper()
 
 	for _, exp := range expected {
 		idx := exp.Index
-		pos := slices.IndexFunc(actual, func(result bvp.NodalValue) bool { return idx == result.Index })
+		pos := slices.IndexFunc(
+			actual,
+			func(result deflect.NodalValue) bool { return idx == result.Index },
+		)
 
 		if pos == -1 {
 			t.Errorf("Nodal %v at %v/%v not found in %v results", desc, idx.NodalID, idx.Dof, len(actual))
@@ -161,22 +163,22 @@ func ExpectFromJSON(data []byte) ([]Expectation, error) {
 	return result, nil
 }
 
-func translateToNodalExpectations(from map[string][]nodalValues) ([]bvp.NodalValue, error) {
-	dofs := map[string]xyz.Dof{
-		"Fx":   xyz.Ux,
-		"Fz":   xyz.Uz,
-		"Fy":   xyz.Uy,
-		"My":   xyz.Phiy,
-		"Mz":   xyz.Phiz,
-		"Mx":   xyz.Phix,
-		"Ux":   xyz.Ux,
-		"Uz":   xyz.Uz,
-		"Uy":   xyz.Uy,
-		"Phiy": xyz.Phiy,
-		"Phiz": xyz.Phiz,
-		"Phix": xyz.Phix,
+func translateToNodalExpectations(from map[string][]nodalValues) ([]deflect.NodalValue, error) {
+	dofs := map[string]deflect.Dof{
+		"Fx":   deflect.Ux,
+		"Fz":   deflect.Uz,
+		"Fy":   deflect.Uy,
+		"My":   deflect.Phiy,
+		"Mz":   deflect.Phiz,
+		"Mx":   deflect.Phix,
+		"Ux":   deflect.Ux,
+		"Uz":   deflect.Uz,
+		"Uy":   deflect.Uy,
+		"Phiy": deflect.Phiy,
+		"Phiz": deflect.Phiz,
+		"Phix": deflect.Phix,
 	}
-	expect := make([]bvp.NodalValue, 0, 2*len(from)) // Capacity is just a guess
+	expect := make([]deflect.NodalValue, 0, 2*len(from)) // Capacity is just a guess
 	var err error
 
 	for nodalID, desc := range from {
@@ -189,8 +191,8 @@ func translateToNodalExpectations(from map[string][]nodalValues) ([]bvp.NodalVal
 					continue
 				}
 
-				idx := xyz.Index{NodalID: nodalID, Dof: dof}
-				expect = append(expect, bvp.NodalValue{Index: idx, Value: value})
+				idx := deflect.Index{NodalID: nodalID, Dof: dof}
+				expect = append(expect, deflect.NodalValue{Index: idx, Value: value})
 			}
 		}
 	}

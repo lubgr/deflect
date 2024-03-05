@@ -1,13 +1,12 @@
-package bvp
+package deflect
 
 import (
 	"fmt"
 
-	"github.com/lubgr/deflect/xyz"
 	"gonum.org/v1/gonum/mat"
 )
 
-func applyNodalBC(bc NodalValue, indices map[xyz.Index]int, dst *mat.VecDense) error {
+func applyNodalBC(bc NodalValue, indices map[Index]int, dst *mat.VecDense) error {
 	index, found := indices[bc.Index]
 
 	if !found {
