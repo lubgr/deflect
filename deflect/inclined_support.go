@@ -8,13 +8,13 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// NewAngularLinkTransformer instantiates a transformer to represent an inclined support to link
+// NewInclinedSupport instantiates a transformer to represent an inclined support to link
 // displacements through an angle.
-func NewAngularLinkTransformer(from, to Index, angle float64) Transformer {
-	return &angularLink{from: from, to: to, c: math.Cos(angle), s: math.Sin(angle), irow: nil}
+func NewInclinedSupport(from, to Index, angle float64) Transformer {
+	return &inclinedSupport{from: from, to: to, c: math.Cos(angle), s: math.Sin(angle), irow: nil}
 }
 
-type angularLink struct {
+type inclinedSupport struct {
 	from, to   Index
 	c, s       float64
 	irow, jrow *mat.VecDense
@@ -27,7 +27,7 @@ const (
 	angularLinkPhasePost
 )
 
-func (l *angularLink) Pre(
+func (l *inclinedSupport) Pre(
 	indices map[Index]int,
 	k *mat.SymDense,
 	rhs, primary *mat.VecDense,
@@ -53,7 +53,7 @@ func (l *angularLink) Pre(
 	return nil
 }
 
-func (l *angularLink) Post(indices map[Index]int, rhs, primary *mat.VecDense) error {
+func (l *inclinedSupport) Post(indices map[Index]int, rhs, primary *mat.VecDense) error {
 	// No need to check for the initialisation of l's bufffers, since l.Pre must have been called
 	// before l.Post, and l.Pre would initialise them.
 	i, j, err := l.mapWithErr(indices)
@@ -68,7 +68,7 @@ func (l *angularLink) Post(indices map[Index]int, rhs, primary *mat.VecDense) er
 	return nil
 }
 
-func (l *angularLink) mapWithErr(indices map[Index]int) (from, to int, err error) {
+func (l *inclinedSupport) mapWithErr(indices map[Index]int) (from, to int, err error) {
 	var ok bool
 
 	if from, ok = indices[l.from]; !ok {
@@ -82,7 +82,7 @@ func (l *angularLink) mapWithErr(indices map[Index]int) (from, to int, err error
 	return from, to, nil
 }
 
-func (l *angularLink) transformVec(i, j int, phase angularLinkPhase, v *mat.VecDense) {
+func (l *inclinedSupport) transformVec(i, j int, phase angularLinkPhase, v *mat.VecDense) {
 	s, c := l.s, l.c
 
 	vi := v.AtVec(i)
@@ -100,7 +100,7 @@ func (l *angularLink) transformVec(i, j int, phase angularLinkPhase, v *mat.VecD
 	}
 }
 
-func (l *angularLink) transformTangent(i, j int, k *mat.SymDense) {
+func (l *inclinedSupport) transformTangent(i, j int, k *mat.SymDense) {
 	dim := k.SymmetricDim()
 	s, c := l.s, l.c
 

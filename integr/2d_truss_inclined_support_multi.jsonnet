@@ -40,9 +40,9 @@ local structure(alpha, beta, gamma, a) = {
   },
 
   links: {
-    A: lib.LinkUxUzAngular(alpha * lib.pi / 180.0),
-    B: lib.LinkUxUzAngular(beta * lib.pi / 180.0),
-    C: lib.LinkUxUzAngular(gamma * lib.pi / 180.0),
+    A: lib.InclinedSupportUxUz(alpha * lib.pi / 180.0),
+    B: lib.InclinedSupportUxUz(beta * lib.pi / 180.0),
+    C: lib.InclinedSupportUxUz(gamma * lib.pi / 180.0),
   },
 };
 

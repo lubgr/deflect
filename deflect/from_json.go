@@ -381,7 +381,7 @@ func translateAngularLinks(
 
 			fromIndex := Index{NodalID: nodeID, Dof: dofFrom}
 			toIndex := Index{NodalID: nodeID, Dof: dofTo}
-			links = append(links, NewAngularLinkTransformer(fromIndex, toIndex, desc.Angle))
+			links = append(links, NewInclinedSupport(fromIndex, toIndex, desc.Angle))
 			bcs = append(bcs, NodalValue{Index: toIndex, Value: 0})
 		}
 	}

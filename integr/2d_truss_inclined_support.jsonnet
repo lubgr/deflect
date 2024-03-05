@@ -36,7 +36,7 @@ local triangle(angle) = {
   },
 
   links: {
-    A: lib.LinkUxUzAngular(alpha),
+    A: lib.InclinedSupportUxUz(alpha),
   },
 
   expected: {

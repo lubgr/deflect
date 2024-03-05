@@ -8,9 +8,9 @@
   Phiy(value=0):: [{ Phiy: value }],
   Phiz(value=0):: [{ Phiz: value }],
 
-  LinkUxUzAngular(angle):: [{ from: 'Ux', to: 'Uz', angle: angle }],
-  LinkUxUyAngular(angle):: [{ from: 'Ux', to: 'Uy', angle: angle }],
-  LinkUyUzAngular(angle):: [{ from: 'Uy', to: 'Uz', angle: angle }],
+  InclinedSupportUxUz(angle):: [{ from: 'Ux', to: 'Uz', angle: angle }],
+  InclinedSupportUxUy(angle):: [{ from: 'Ux', to: 'Uy', angle: angle }],
+  InclinedSupportUyUz(angle):: [{ from: 'Uy', to: 'Uz', angle: angle }],
 
   local single(what, value, x) =
     if x == null then
