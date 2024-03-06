@@ -30,12 +30,7 @@ const (
 	angularLinkPhasePost
 )
 
-func (l *inclinedSupport) Pre(
-	indices map[Index]int,
-	k *mat.SymDense,
-	rhs, primary *mat.VecDense,
-) error {
-
+func (l *inclinedSupport) Pre(indices map[Index]int, k *mat.SymDense, r, d *mat.VecDense) error {
 	// Initialise the buffer if necessary. We might want to think about sharing the same buffer
 	// between multiple inclinedSupport instances at some point, since re-using the buffer would be
 	// more efficient.
@@ -52,13 +47,13 @@ func (l *inclinedSupport) Pre(
 	}
 
 	l.transformTangent(i, j, k)
-	l.transformVec(i, j, angularLinkPhasePre, rhs)
-	l.transformVec(i, j, angularLinkPhasePre, primary)
+	l.transformVec(i, j, angularLinkPhasePre, r)
+	l.transformVec(i, j, angularLinkPhasePre, d)
 
 	return nil
 }
 
-func (l *inclinedSupport) Post(indices map[Index]int, rhs, primary *mat.VecDense) error {
+func (l *inclinedSupport) Post(indices map[Index]int, r, d *mat.VecDense) error {
 	// No need to check for the initialisation of l's bufffers, since l.Pre must have been called
 	// before l.Post, and l.Pre would initialise them.
 	i, j, err := l.mapWithErr(indices)
@@ -67,8 +62,8 @@ func (l *inclinedSupport) Post(indices map[Index]int, rhs, primary *mat.VecDense
 		return fmt.Errorf("couldn't apply post-transformation: %w", err)
 	}
 
-	l.transformVec(i, j, angularLinkPhasePost, rhs)
-	l.transformVec(i, j, angularLinkPhasePost, primary)
+	l.transformVec(i, j, angularLinkPhasePost, r)
+	l.transformVec(i, j, angularLinkPhasePost, d)
 
 	return nil
 }

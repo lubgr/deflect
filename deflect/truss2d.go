@@ -25,8 +25,7 @@ type truss2d struct {
 	disjoint Truss2dDisjoint
 }
 
-func (t *truss2d) Assemble(indices map[Index]int, k *mat.SymDense,
-	rhs, primary *mat.VecDense) error {
+func (t *truss2d) Assemble(indices map[Index]int, k *mat.SymDense, r, d *mat.VecDense) error {
 	local := t.localTangent()
 	rot := t.rotation()
 

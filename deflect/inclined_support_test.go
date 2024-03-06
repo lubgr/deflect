@@ -23,15 +23,15 @@ func TestInclinedSupportTransformation(t *testing.T) {
 		alpha := angle * math.Pi / 180.0
 		transformer, _ := NewInclinedSupport(from, to, alpha)
 
-		k, rhs, d := matricesToTransform(dim)
-		kref, rhsref, dref := referenceMatricesToTransform(k, rhs, d)
-		r := transformationMatrix(dim, 3, 20, alpha)
-		kref.Mul(r.T(), kref)
-		kref.Mul(kref, r)
-		dref.MulVec(r.T(), d)
-		rhsref.MulVec(r.T(), rhs)
+		k, r, d := matricesToTransform(dim)
+		kref, rref, dref := referenceMatricesToTransform(k, r, d)
+		rot := transformationMatrix(dim, 3, 20, alpha)
+		kref.Mul(rot.T(), kref)
+		kref.Mul(kref, rot)
+		dref.MulVec(rot.T(), d)
+		rref.MulVec(rot.T(), r)
 
-		transformer.Pre(indices, k, rhs, d)
+		transformer.Pre(indices, k, r, d)
 
 		if !mat.EqualApprox(k, kref, 1e-8) {
 			t.Errorf("Expected Pre operation to compute tᵀ·k·t, but reference result differs")
@@ -40,27 +40,27 @@ func TestInclinedSupportTransformation(t *testing.T) {
 			t.Errorf("Expected Pre operation to compute tᵀ·d, but reference result differs")
 		}
 
-		transformer.Post(indices, rhs, d)
+		transformer.Post(indices, r, d)
 
-		dref.MulVec(r, dref)
-		rhsref.MulVec(r, rhsref)
+		dref.MulVec(rot, dref)
+		rref.MulVec(rot, rref)
 
 		if !mat.EqualApprox(d, dref, 1e-8) {
 			t.Errorf("Expected Post to compute t·d, but reference result differs")
 		}
-		if !mat.EqualApprox(rhs, rhsref, 1e-8) {
-			t.Errorf("Expected Post to compute t·rhs, but reference result differs")
+		if !mat.EqualApprox(r, rref, 1e-8) {
+			t.Errorf("Expected Post to compute t·r, but reference result differs")
 		}
 	}
 }
 
-func matricesToTransform(dim int) (k *mat.SymDense, rhs, d *mat.VecDense) {
-	rhs, d = mat.NewVecDense(dim, nil), mat.NewVecDense(dim, nil)
+func matricesToTransform(dim int) (k *mat.SymDense, r, d *mat.VecDense) {
+	r, d = mat.NewVecDense(dim, nil), mat.NewVecDense(dim, nil)
 	k = mat.NewSymDense(dim, nil)
 
 	value := 0.0
 	for i := range dim {
-		rhs.SetVec(i, value)
+		r.SetVec(i, value)
 		d.SetVec(i, 2*value)
 		for j := i; j < dim; j++ {
 			k.SetSym(i, j, value)
@@ -68,22 +68,22 @@ func matricesToTransform(dim int) (k *mat.SymDense, rhs, d *mat.VecDense) {
 		}
 	}
 
-	return k, rhs, d
+	return k, r, d
 }
 
 func referenceMatricesToTransform(
 	k *mat.SymDense,
-	rhs, d *mat.VecDense,
-) (kref *mat.Dense, rhsref, dref *mat.VecDense) {
+	r, d *mat.VecDense,
+) (kref *mat.Dense, rref, dref *mat.VecDense) {
 	dim := k.SymmetricDim()
-	rhsref, dref = mat.NewVecDense(dim, nil), mat.NewVecDense(dim, nil)
+	rref, dref = mat.NewVecDense(dim, nil), mat.NewVecDense(dim, nil)
 	kref = mat.NewDense(dim, dim, nil)
 
 	kref.Copy(k)
 	dref.CopyVec(d)
-	rhsref.CopyVec(rhs)
+	rref.CopyVec(r)
 
-	return kref, rhsref, dref
+	return kref, rref, dref
 }
 
 func transformationMatrix(dim, k, l int, alpha float64) *mat.Dense {

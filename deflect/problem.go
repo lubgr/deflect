@@ -72,11 +72,11 @@ type CrossSection interface {
 
 // Element defines the common API of any finite element formulation implemented in this package.
 type Element interface {
-	// Assemble adds entries to the given tangent k and residual rhs, using the current primary nodal
-	// values in primary. Only non-linear elements need to read from primary. The matrices are global
+	// Assemble adds entries to the given tangent k and residual r, using the current primary nodal
+	// values in d. Only non-linear elements need to read from primary. The matrices are global
 	// entities, and the element uses indices to map symbolic indices to plain matrix indices, which
 	// can be used to access the global matrices.
-	Assemble(indices map[Index]int, k *mat.SymDense, rhs, primary *mat.VecDense) error
+	Assemble(indices map[Index]int, k *mat.SymDense, r, d *mat.VecDense) error
 	// Indices adds the indices this element uses (pairing of degree of freedom and nodal id) to set.
 	Indices(set map[Index]struct{})
 	// NumNodes returns the number of nodes this element is connected to.
@@ -88,10 +88,10 @@ type Element interface {
 // Transformer mutate the system of equation before and after it is solved. For example, an inclined
 // support can be split into a Transformer and a Dirichlet BC, such that they act independently to
 // link degrees of freedom through a trigonometric relation. Transformer instances don't prescribe
-// values in rhs or primary (this is done by NodalBC instances).
+// values in r or d (this is done by NodalBC instances).
 type Transformer interface {
-	Pre(indices map[Index]int, k *mat.SymDense, rhs, primary *mat.VecDense) error
-	Post(indices map[Index]int, rhs, primary *mat.VecDense) error
+	Pre(indices map[Index]int, k *mat.SymDense, r, d *mat.VecDense) error
+	Post(indices map[Index]int, r, d *mat.VecDense) error
 }
 
 // Problem stores data to solve a user specified boundary value problem.
@@ -120,5 +120,5 @@ type ProblemSolver interface {
 		p *Problem,
 		idx IndexLayout,
 		strategy EquationSolver,
-	) (primary, reactions []NodalValue, err error)
+	) (d, r []NodalValue, err error)
 }

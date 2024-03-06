@@ -118,12 +118,12 @@ func runTestCase(input []byte, t *testing.T) {
 	}
 
 	solver := deflect.NewLinearProblemSolver()
-	primary, secondary, err := solver.Solve(&problem, layout, deflect.NewCholeskySolver())
+	d, r, err := solver.Solve(&problem, layout, deflect.NewCholeskySolver())
 
 	for _, e := range expect {
 		e.Failure(err, t)
-		e.Primary(primary, t)
-		e.Reaction(secondary, t)
+		e.Primary(d, t)
+		e.Reaction(r, t)
 		e.Interpolation(t)
 	}
 }

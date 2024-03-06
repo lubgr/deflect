@@ -8,7 +8,7 @@ import (
 func TestCompareIndices(t *testing.T) {
 	cases := []struct {
 		lhs      Index
-		rhs      Index
+		r        Index
 		expected int
 	}{
 		{Index{"0", Ux}, Index{"5", Ux}, -1},
@@ -20,9 +20,9 @@ func TestCompareIndices(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		if actual := compareIndices(test.lhs, test.rhs); actual != test.expected {
+		if actual := compareIndices(test.lhs, test.r); actual != test.expected {
 			t.Errorf("Expected comparison between %v and %v to be %v, got %v",
-				test.lhs, test.rhs, test.expected, actual)
+				test.lhs, test.r, test.expected, actual)
 		}
 	}
 }
