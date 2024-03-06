@@ -18,7 +18,7 @@ local common = {
   },
 
   neumann: {
-    Z: lib.Fx(100 * 1e3),
+    Z: lib.Fx(100e3),
   },
 
   expected: {
@@ -27,7 +27,7 @@ local common = {
       Z: lib.Ux(1 / 3 * 1e-3) + lib.Uz(),
     },
     reaction: {
-      A: lib.Fx(-100 * 1e3),
+      A: lib.Fx(-100e3),
     },
   },
 };
@@ -36,8 +36,21 @@ local single = common {
   name: 'single',
   description: 'Horizontal line, single truss',
 
+  neumann: {
+    Z: lib.Fx(100e3)
+       // The vertical load doesn't cause any deformation, it goes straight into the support.
+       // Specifying it here is to assert that the reaction force ends up in the results.
+       + lib.Fz(-250e3),
+  },
+
   elements: {
     AZ: default.Truss2d(),
+  },
+
+  expected: super.expected + {
+    reaction: super.reaction + {
+      Z: lib.Fz(250e3),
+    },
   },
 };
 

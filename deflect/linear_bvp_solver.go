@@ -73,7 +73,8 @@ func (s *linearSolver) Solve(
 	s.extractK12()
 
 	if hasNonZeroDirichlet {
-		// Computes [r_2 - k_21 d_1] to account for the known, constrained variables
+		// This computes [r_2 - k_21 d_1] (see partitioning below) to account for the known, constrained
+		// primary nodal values:
 		scratch.Reset()
 		scratch.ReuseAsVec(s.dim - s.constrained)
 		scratch.MulVec(k12.T(), d1) // T() doesn't copy, it returns a view
@@ -85,10 +86,11 @@ func (s *linearSolver) Solve(
 		return nil, nil, fmt.Errorf("failed to solve assembled linear system: %w", errSolve)
 	}
 
-	//  Computes [r_1] = [k_11 d_1 + k_12 d_2]:
+	// Computes reaction forces [r_1] = (-1)·[k_11 d_1 + k_12 d_2] for Dirichlet-constrained dofs:
 	scratch.Reset()
 	scratch.ReuseAsVec(s.constrained)
 	scratch.MulVec(k12, d2)
+	r1.ScaleVec(-1.0, r1) // Turn Neumann loads into reactions
 	r1.AddVec(r1, scratch)
 	scratch.MulVec(k11, d1)
 	r1.AddVec(r1, scratch)
@@ -154,7 +156,7 @@ func formMatrices(dim, constrained int, prior *matrices) matrices {
 	// solved for. We solve these through the linear system
 	//   [k_22][d_2] = [r_2 - k_21 d_1]
 	// and then use the solution vector to compute the reaction forces:
-	//   [r_1] = [k_11 d_1 + k_12 d_2]
+	//   [r_1] = (-1)·[k_11 d_1 + k_12 d_2]
 	eqn.k11 = eqn.k.SliceSym(0, constrained)
 	eqn.k22 = eqn.k.SliceSym(constrained, dim)
 
