@@ -30,7 +30,7 @@ func (t *truss2d) Assemble(indices map[Index]int, k *mat.SymDense,
 	local := t.localTangent()
 	rot := t.rotation()
 
-	// Computes the global tangent k = rot^T * (rot^T * local)^T
+	// Computes the global tangent k = rotᵀ * (rotᵀ * local)ᵀ
 	global := mat.NewDense(4, 4, nil)
 	global.Mul(rot.T(), local)
 	global.Mul(rot.T(), global.T())

@@ -88,8 +88,8 @@ func (l *inclinedSupport) mapWithErr(indices map[Index]int) (from, to int, err e
 }
 
 func (l *inclinedSupport) transformVec(i, j int, phase angularLinkPhase, v *mat.VecDense) {
-	// Computes t^T·v for the Pre-step, and t*v for the Post-step, where v is the given vector, and
-	// t is the coordinate transformation
+	// Computes tᵀ·v for the Pre-step, and t*v for the Post-step, where v is the given vector, and t
+	// is the coordinate transformation
 	//   ⎡c  -s⎤
 	//   ⎣s   c⎦
 	s, c := l.s, l.c
@@ -109,7 +109,7 @@ func (l *inclinedSupport) transformVec(i, j int, phase angularLinkPhase, v *mat.
 }
 
 func (l *inclinedSupport) transformTangent(i, j int, k *mat.SymDense) {
-	// Computes t^T·k·t where t is the coordinate transformation
+	// Computes tᵀ·k·t where t is the coordinate transformation
 	//   ⎡c  -s⎤
 	//   ⎣s   c⎦
 	// This implementation tries to use as little storage as possible. Arguably, this could also be

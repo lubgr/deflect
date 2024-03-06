@@ -48,9 +48,9 @@ local structure(alpha, beta, gamma, a) = {
 
 // The reaction forces for variables angles alpha, beta, and gamma are the solution to this system
 // of equations, where sa = sin(alpha), ca = cos(alpha), sb = sin(beta), ...:
-//   A*sa + B*sb   + C*sg = 3*F
-//   A*ca + B*cb   + C*cg = 2*F
-//          B*2*cb + C*sg = 5*F
+//   A·sa + B·sb   + C·sg = 3·F
+//   A·ca + B·cb   + C·cg = 2·F
+//          B·2·cb + C·sg = 5·F
 // The following Python/numpy snippet solves for A, B, and C, and decomposes them into x/z
 // components:
 //   A = np.array([[sa,  sb, sg], [ca,  cb, cg], [0, 2*cb, sg]])
