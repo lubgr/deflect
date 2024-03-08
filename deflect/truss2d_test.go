@@ -3,7 +3,6 @@ package deflect
 import (
 	"maps"
 	"math"
-	"slices"
 	"testing"
 
 	"gonum.org/v1/gonum/mat"
@@ -174,51 +173,5 @@ func TestTruss2dLocalTangent(t *testing.T) {
 			t.Errorf("Expected local tangent to be \n%v\n, instead got \n%v\n",
 				mat.Formatted(expected), mat.Formatted(actual))
 		}
-	}
-}
-
-func TestTruss2dFailToMapIndices(t *testing.T) {
-	// Tests that an error is returned when index mapping can't be done because the element accesses
-	// the given index map with non-existing keys.
-	n0, n1 := truss2dTestNodes()
-	truss := truss2d{"ID", n0, n1, &exampleMat, Truss2dDisjointNone}
-
-	_, _, _, _, err := truss.mappedIndices(make(map[Index]int))
-
-	if err == nil {
-		t.Errorf("Expected index lookup to fail given an empty map")
-	}
-
-	incomplete := map[Index]int{
-		Index{NodalID: "A", Dof: Ux}:   10,
-		Index{NodalID: "B", Dof: Ux}:   11,
-		Index{NodalID: "B", Dof: Phiy}: 12,
-	}
-
-	_, _, _, _, err = truss.mappedIndices(incomplete)
-
-	if err == nil {
-		t.Errorf("Expected index lookup to fail given an incomplete map")
-	}
-}
-
-func TestTruss2dMapIndices(t *testing.T) {
-	n0, n1 := truss2dTestNodes()
-	truss := truss2d{"ID", n0, n1, &exampleMat, Truss2dDisjointNone}
-	lookup := map[Index]int{
-		Index{NodalID: "A", Dof: Ux}: 10,
-		Index{NodalID: "A", Dof: Uz}: 11,
-		Index{NodalID: "B", Dof: Ux}: 12,
-		Index{NodalID: "B", Dof: Uz}: 13,
-	}
-
-	i, j, k, l, err := truss.mappedIndices(lookup)
-	actual := []int{i, j, k, l}
-	expected := []int{10, 11, 12, 13}
-
-	if err != nil {
-		t.Fatalf("Expected index lookup to succeed, but it failed")
-	} else if !slices.Equal(actual, expected) {
-		t.Errorf("Expected mapped indices to be %v, but got %v", expected, actual)
 	}
 }

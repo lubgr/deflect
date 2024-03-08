@@ -37,6 +37,34 @@ func dofSet(data []Index) map[Index]struct{} {
 	return result
 }
 
+func TestIndexLayoutLookup(t *testing.T) {
+	layout := newIndexLayoutDirect(map[Index]int{
+		Index{NodalID: "A", Dof: Ux}: 2,
+		Index{NodalID: "A", Dof: Uy}: 0,
+		Index{NodalID: "B", Dof: Ux}: 1,
+		Index{NodalID: "B", Dof: Uy}: 3,
+	})
+
+	for symbolic, expected := range layout.indices {
+		if i := layout.MapOne(symbolic); i != expected {
+			t.Errorf("Expected %v mapped to %v, got %v", symbolic, expected, i)
+		}
+		if reverse := layout.Unmap(expected); reverse != symbolic {
+			t.Errorf("Expected %v mapped back to %v, got %v", expected, symbolic, reverse)
+		}
+	}
+
+	if err := layout.Failure(); err != nil {
+		t.Errorf("Expected successful lookups up to here, got %v", err)
+	}
+
+	layout.MapTwo(Index{NodalID: "X", Dof: Ux}, Index{NodalID: "A", Dof: Phix})
+
+	if layout.failures != 2 {
+		t.Errorf("Expected lookup failure count to mirror invalid lookups, got %v", layout.failures)
+	}
+}
+
 func TestIndexMapCreationWithoutOverlap(t *testing.T) {
 	aux := Index{NodalID: "A", Dof: Ux}
 	buz := Index{NodalID: "B", Dof: Uz}

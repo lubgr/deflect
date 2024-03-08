@@ -76,7 +76,7 @@ type Element interface {
 	// values in d. Only non-linear elements need to read from primary. The matrices are global
 	// entities, and the element uses indices to map symbolic indices to plain matrix indices, which
 	// can be used to access the global matrices.
-	Assemble(indices map[Index]int, k *mat.SymDense, r, d *mat.VecDense) error
+	Assemble(indices IndexLayout, k *mat.SymDense, r, d *mat.VecDense)
 	// Indices adds the indices this element uses (pairing of degree of freedom and nodal id) to set.
 	Indices(set map[Index]struct{})
 	// NumNodes returns the number of nodes this element is connected to.
@@ -90,8 +90,8 @@ type Element interface {
 // link degrees of freedom through a trigonometric relation. Transformer instances don't prescribe
 // values in r or d (this is done by NodalBC instances).
 type Transformer interface {
-	Pre(indices map[Index]int, k *mat.SymDense, r, d *mat.VecDense) error
-	Post(indices map[Index]int, r, d *mat.VecDense) error
+	Pre(indices IndexLayout, k *mat.SymDense, r, d *mat.VecDense)
+	Post(indices IndexLayout, r, d *mat.VecDense)
 }
 
 // Problem stores data to solve a user specified boundary value problem.

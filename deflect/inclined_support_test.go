@@ -16,7 +16,9 @@ func TestInclinedSupportTransformation(t *testing.T) {
 	// dependent on the implementation details of the function under test).
 	cases := []float64{0, 45, 90, 123.456}
 	from, to := Index{NodalID: "A", Dof: Ux}, Index{NodalID: "A", Dof: Uy}
-	indices := map[Index]int{from: 3, to: 20}
+	// Constructor is side-stepped to avoid filling in the entire index map. This will crash if any
+	// reverse-mapping is used (but that's not the case).
+	layout := IndexLayout{indices: map[Index]int{from: 3, to: 20}, inverse: nil}
 	dim := 30
 
 	for _, angle := range cases {
@@ -31,7 +33,7 @@ func TestInclinedSupportTransformation(t *testing.T) {
 		dref.MulVec(rot.T(), d)
 		rref.MulVec(rot.T(), r)
 
-		transformer.Pre(indices, k, r, d)
+		transformer.Pre(layout, k, r, d)
 
 		if !mat.EqualApprox(k, kref, 1e-8) {
 			t.Errorf("Expected Pre operation to compute tᵀ·k·t, but reference result differs")
@@ -40,7 +42,7 @@ func TestInclinedSupportTransformation(t *testing.T) {
 			t.Errorf("Expected Pre operation to compute tᵀ·d, but reference result differs")
 		}
 
-		transformer.Post(indices, r, d)
+		transformer.Post(layout, r, d)
 
 		dref.MulVec(rot, dref)
 		rref.MulVec(rot, rref)

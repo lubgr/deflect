@@ -1,7 +1,6 @@
 package deflect
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"slices"
@@ -19,7 +18,6 @@ type linearSolver struct {
 	eqn              matrices
 	d, r             []NodalValue
 	dim, constrained int
-	err              error
 }
 
 type matrices struct {
@@ -36,7 +34,7 @@ func (s *linearSolver) Solve(
 	layout IndexLayout,
 	strategy EquationSolver,
 ) ([]NodalValue, []NodalValue, error) {
-	if err := s.initialise(len(layout.indices), len(p.Dirichlet)); err != nil {
+	if err := s.initialise(layout.EqSize(), len(p.Dirichlet)); err != nil {
 		return nil, nil, err
 	}
 
@@ -47,27 +45,27 @@ func (s *linearSolver) Solve(
 	d1, d2, r1, r2 := s.eqn.d1, s.eqn.d2, s.eqn.r1, s.eqn.r2
 
 	for _, e := range p.Elements {
-		s.acc(e.Assemble(layout.indices, k, r, d))
+		e.Assemble(layout, k, r, d)
 	}
 
 	var hasNonZeroDirichlet bool
 
 	for _, bc := range p.Dirichlet {
 		hasNonZeroDirichlet = hasNonZeroDirichlet || scalar.EqualWithinAbs(bc.Value, 0, 1e-12)
-		s.acc(applyNodalBC(bc, layout.indices, d))
+		d.SetVec(layout.MapOne(bc.Index), bc.Value)
 	}
 
 	for _, bc := range p.Neumann {
-		s.acc(applyNodalBC(bc, layout.indices, r))
+		r.SetVec(layout.MapOne(bc.Index), bc.Value)
 	}
 
 	for _, transform := range p.EqTransforms {
-		s.acc(transform.Pre(layout.indices, k, r, d))
+		transform.Pre(layout, k, r, d)
 	}
 
-	if s.err != nil {
+	if err := layout.Failure(); err != nil {
 		// Don't attempt to continue if something went wrong so far
-		return nil, nil, s.err
+		return nil, nil, fmt.Errorf("failed to assemble global matrices: %w", err)
 	}
 
 	s.extractK12()
@@ -96,22 +94,20 @@ func (s *linearSolver) Solve(
 	r1.AddVec(r1, scratch)
 
 	for _, transform := range p.EqTransforms {
-		s.acc(transform.Post(layout.indices, r, d))
+		transform.Post(layout, r, d)
 	}
 
 	// Group primary/secondary solution with symbolic index
 	for i := 0; i < s.dim; i++ {
-		idx := layout.inverse[i]
+		idx := layout.Unmap(i)
 		s.d[i] = NodalValue{Index: idx, Value: d.AtVec(i)}
 		s.r[i] = NodalValue{Index: idx, Value: r.AtVec(i)}
 	}
 
-	return s.d, s.r, s.err
+	return s.d, s.r, layout.Failure()
 }
 
 func (s *linearSolver) initialise(dim, constrained int) error {
-	s.err = nil
-
 	if dim == constrained {
 		return fmt.Errorf("all %v degrees of freedom have Dirichlet BC, no need to solve this", dim)
 	}
@@ -166,10 +162,6 @@ func formMatrices(dim, constrained int, prior *matrices) matrices {
 	eqn.r2 = eqn.r.SliceVec(constrained, dim).(*mat.VecDense)
 
 	return *eqn
-}
-
-func (s *linearSolver) acc(op error) {
-	s.err = errors.Join(s.err, op)
 }
 
 func (s *linearSolver) extractK12() {

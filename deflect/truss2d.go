@@ -1,7 +1,6 @@
 package deflect
 
 import (
-	"errors"
 	"fmt"
 
 	"gonum.org/v1/gonum/mat"
@@ -25,7 +24,7 @@ type truss2d struct {
 	disjoint Truss2dDisjoint
 }
 
-func (t *truss2d) Assemble(indices map[Index]int, k *mat.SymDense, r, d *mat.VecDense) error {
+func (t *truss2d) Assemble(indices IndexLayout, k *mat.SymDense, r, d *mat.VecDense) {
 	local := t.localTangent()
 	rot := t.rotation()
 
@@ -34,11 +33,8 @@ func (t *truss2d) Assemble(indices map[Index]int, k *mat.SymDense, r, d *mat.Vec
 	global.Mul(rot.T(), local)
 	global.Mul(rot.T(), global.T())
 
-	ux0, uz0, ux1, uz1, err := t.mappedIndices(indices)
-
-	if err != nil {
-		return fmt.Errorf("element tangent assembly: %w", err)
-	}
+	idx := t.indicesAsArray()
+	ux0, uz0, ux1, uz1 := indices.MapFour(idx[0], idx[1], idx[2], idx[3])
 
 	add := func(i, j int, value float64) {
 		k.SetSym(i, j, k.At(i, j)+value)
@@ -57,28 +53,6 @@ func (t *truss2d) Assemble(indices map[Index]int, k *mat.SymDense, r, d *mat.Vec
 	add(ux1, uz1, global.At(2, 3))
 
 	add(uz1, uz1, global.At(3, 3))
-
-	return nil
-}
-
-func (t *truss2d) mappedIndices(lookup map[Index]int) (int, int, int, int, error) {
-	mapWithErr := func(symbolic Index) (int, error) {
-		plain, ok := lookup[symbolic]
-
-		if !ok {
-			return -1, fmt.Errorf("%v not found", symbolic)
-		}
-
-		return plain, nil
-	}
-
-	indices := t.indicesAsArray()
-	ux0, err0 := mapWithErr(indices[0])
-	uz0, err1 := mapWithErr(indices[1])
-	ux1, err2 := mapWithErr(indices[2])
-	uz1, err3 := mapWithErr(indices[3])
-
-	return ux0, uz0, ux1, uz1, errors.Join(err0, err1, err2, err3)
 }
 
 func (t *truss2d) indicesAsArray() *[4]Index {
