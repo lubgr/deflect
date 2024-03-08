@@ -31,10 +31,10 @@ type matrices struct {
 
 func (s *linearSolver) Solve(
 	p *Problem,
-	layout IndexLayout,
+	indices EqLayout,
 	strategy EquationSolver,
 ) ([]NodalValue, []NodalValue, error) {
-	if err := s.initialise(layout.EqSize(), len(p.Dirichlet)); err != nil {
+	if err := s.initialise(indices.EqSize(), len(p.Dirichlet)); err != nil {
 		return nil, nil, err
 	}
 
@@ -45,25 +45,25 @@ func (s *linearSolver) Solve(
 	d1, d2, r1, r2 := s.eqn.d1, s.eqn.d2, s.eqn.r1, s.eqn.r2
 
 	for _, e := range p.Elements {
-		e.Assemble(layout, k, r, d)
+		e.Assemble(indices, k, r, d)
 	}
 
 	var hasNonZeroDirichlet bool
 
 	for _, bc := range p.Dirichlet {
 		hasNonZeroDirichlet = hasNonZeroDirichlet || scalar.EqualWithinAbs(bc.Value, 0, 1e-12)
-		d.SetVec(layout.MapOne(bc.Index), bc.Value)
+		d.SetVec(indices.MapOne(bc.Index), bc.Value)
 	}
 
 	for _, bc := range p.Neumann {
-		r.SetVec(layout.MapOne(bc.Index), bc.Value)
+		r.SetVec(indices.MapOne(bc.Index), bc.Value)
 	}
 
 	for _, transform := range p.EqTransforms {
-		transform.Pre(layout, k, r, d)
+		transform.Pre(indices, k, r, d)
 	}
 
-	if err := layout.Failure(); err != nil {
+	if err := indices.Failure(); err != nil {
 		// Don't attempt to continue if something went wrong so far
 		return nil, nil, fmt.Errorf("failed to assemble global matrices: %w", err)
 	}
@@ -94,17 +94,17 @@ func (s *linearSolver) Solve(
 	r1.AddVec(r1, scratch)
 
 	for _, transform := range p.EqTransforms {
-		transform.Post(layout, r, d)
+		transform.Post(indices, r, d)
 	}
 
 	// Group primary/secondary solution with symbolic index
 	for i := 0; i < s.dim; i++ {
-		idx := layout.Unmap(i)
+		idx := indices.Unmap(i)
 		s.d[i] = NodalValue{Index: idx, Value: d.AtVec(i)}
 		s.r[i] = NodalValue{Index: idx, Value: r.AtVec(i)}
 	}
 
-	return s.d, s.r, layout.Failure()
+	return s.d, s.r, indices.Failure()
 }
 
 func (s *linearSolver) initialise(dim, constrained int) error {

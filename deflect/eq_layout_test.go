@@ -37,8 +37,8 @@ func dofSet(data []Index) map[Index]struct{} {
 	return result
 }
 
-func TestIndexLayoutLookup(t *testing.T) {
-	layout := newIndexLayoutDirect(map[Index]int{
+func TestEqLayoutLookup(t *testing.T) {
+	layout := newEqLayoutDirect(map[Index]int{
 		Index{NodalID: "A", Dof: Ux}: 2,
 		Index{NodalID: "A", Dof: Uy}: 0,
 		Index{NodalID: "B", Dof: Ux}: 1,

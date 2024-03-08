@@ -108,7 +108,7 @@ func runTestCase(input []byte, t *testing.T) {
 		t.Fatalf("Failed to build BVP/expectations from JSON: %v", err)
 	}
 
-	layout, err := deflect.NewIndexLayout(&problem)
+	indices, err := deflect.NewEqLayout(&problem)
 
 	if err != nil {
 		for _, e := range expect {
@@ -118,7 +118,7 @@ func runTestCase(input []byte, t *testing.T) {
 	}
 
 	solver := deflect.NewLinearProblemSolver()
-	d, r, err := solver.Solve(&problem, layout, deflect.NewCholeskySolver())
+	d, r, err := solver.Solve(&problem, indices, deflect.NewCholeskySolver())
 
 	for _, e := range expect {
 		e.Failure(err, t)

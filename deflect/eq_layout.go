@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-// IndexLayout manages the mapping between symbolic and integral matrix indices. This is used for
+// EqLayout manages the mapping between symbolic and integral matrix indices. This is used for
 // elements and boundary conditions to know where in the global matrices/vectors they should add
 // their coefficients during assembly. It collects lookup errors behind the scene. These errors must
 // be manually checked at a reasonable point in time - the individual lookups will _not_ fail, but
 // return zero indices instead. This means an out-of-bounds panic is avoided, but any matrices
 // populated with the erroneous index mapping can't be used. In the context of tangent/residual
 // assembly, the solver process should probably be aborted.
-type IndexLayout struct {
+type EqLayout struct {
 	indices  map[Index]int
 	inverse  []Index
 	failures int
@@ -22,13 +22,13 @@ type IndexLayout struct {
 }
 
 // EqSize returns the total size of the system of equations, including Dirichlet-constrained nodes.
-func (il *IndexLayout) EqSize() int {
+func (il *EqLayout) EqSize() int {
 	return len(il.indices)
 }
 
 // MapOne looks up and returns the mapped-to plain matrix index. Returns zero if isym is not mapped
-// and internally accumulates an error, see [IndexLayout.Failure] and [IndexLayout].
-func (il *IndexLayout) MapOne(isym Index) (i int) {
+// and internally accumulates an error, see [EqLayout.Failure] and [EqLayout].
+func (il *EqLayout) MapOne(isym Index) (i int) {
 	var ok bool
 	i, ok = il.indices[isym]
 	il.saveFailure(ok, isym)
@@ -36,22 +36,22 @@ func (il *IndexLayout) MapOne(isym Index) (i int) {
 }
 
 // MapTwo is identical to [MapOne], but with two lookups.
-func (il *IndexLayout) MapTwo(isym, jsym Index) (i, j int) {
+func (il *EqLayout) MapTwo(isym, jsym Index) (i, j int) {
 	return il.MapOne(isym), il.MapOne(jsym)
 }
 
 // MapFour is identical to [MapOne], but with four lookups.
-func (il *IndexLayout) MapFour(isym, jsym, ksym, lsym Index) (i, j, k, l int) {
+func (il *EqLayout) MapFour(isym, jsym, ksym, lsym Index) (i, j, k, l int) {
 	return il.MapOne(isym), il.MapOne(jsym), il.MapOne(ksym), il.MapOne(lsym)
 }
 
 // Unmap looks up the reverse mapping, but does not implement any error handling - i must have been
 // retrieved by lookup functions like [MapOne] beforehand.
-func (il *IndexLayout) Unmap(i int) (isym Index) {
+func (il *EqLayout) Unmap(i int) (isym Index) {
 	return il.inverse[i]
 }
 
-func (il *IndexLayout) saveFailure(ok bool, symbolic Index) {
+func (il *EqLayout) saveFailure(ok bool, symbolic Index) {
 	if !ok {
 		il.failures++
 
@@ -62,9 +62,9 @@ func (il *IndexLayout) saveFailure(ok bool, symbolic Index) {
 }
 
 // Failure returns a non-nil error if any of the preceding lookup operations failed. The internal
-// error state is _not_ flushed. In order to clear the error, a new IndexLayout instance must be
+// error state is _not_ flushed. In order to clear the error, a new EqLayout instance must be
 // instantiated.
-func (il *IndexLayout) Failure() error {
+func (il *EqLayout) Failure() error {
 	if il.failures == 0 {
 		return nil
 	}
@@ -79,15 +79,15 @@ func (il *IndexLayout) Failure() error {
 
 }
 
-// NewIndexLayout creates a new index layout for the given boundary value problem.
-func NewIndexLayout(p *Problem) (IndexLayout, error) {
+// NewEqLayout creates a new index layout for the given boundary value problem.
+func NewEqLayout(p *Problem) (EqLayout, error) {
 	indices, err := createIndexMap(p.Elements, p.Dirichlet)
 
-	return newIndexLayoutDirect(indices), err
+	return newEqLayoutDirect(indices), err
 }
 
-func newIndexLayoutDirect(indices map[Index]int) IndexLayout {
-	return IndexLayout{indices: indices, inverse: invertIndexMap(indices)}
+func newEqLayoutDirect(indices map[Index]int) EqLayout {
+	return EqLayout{indices: indices, inverse: invertIndexMap(indices)}
 }
 
 // IndexMap constructs the mapping from symbolic to plain matrix indices. It returns an error when

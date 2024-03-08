@@ -29,7 +29,7 @@ const (
 	angularLinkPhasePost
 )
 
-func (l *inclinedSupport) Pre(indices IndexLayout, k *mat.SymDense, r, d *mat.VecDense) {
+func (l *inclinedSupport) Pre(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense) {
 	// Initialise the buffer if necessary. We might want to think about sharing the same buffer
 	// between multiple inclinedSupport instances at some point, since re-using the buffer would be
 	// more efficient.
@@ -46,7 +46,7 @@ func (l *inclinedSupport) Pre(indices IndexLayout, k *mat.SymDense, r, d *mat.Ve
 	l.transformVec(i, j, angularLinkPhasePre, d)
 }
 
-func (l *inclinedSupport) Post(indices IndexLayout, r, d *mat.VecDense) {
+func (l *inclinedSupport) Post(indices EqLayout, r, d *mat.VecDense) {
 	// No need to check for the initialisation of l's bufffers, since l.Pre must have been called
 	// before l.Post, and l.Pre would initialise them.
 	i, j := indices.MapTwo(l.from, l.to)

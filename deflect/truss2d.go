@@ -24,7 +24,7 @@ type truss2d struct {
 	disjoint Truss2dDisjoint
 }
 
-func (t *truss2d) Assemble(indices IndexLayout, k *mat.SymDense, r, d *mat.VecDense) {
+func (t *truss2d) Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense) {
 	local := t.localTangent()
 	rot := t.rotation()
 
