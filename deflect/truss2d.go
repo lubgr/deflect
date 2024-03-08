@@ -18,9 +18,7 @@ const (
 )
 
 type truss2d struct {
-	id       string
-	n0, n1   *Node
-	material *Material
+	oneDimElement
 	disjoint Truss2dDisjoint
 }
 
@@ -125,29 +123,18 @@ func (t *truss2d) Indices(set map[Index]struct{}) {
 	}
 }
 
-func (t *truss2d) NumNodes() uint {
-	return 2
-}
-
-func (t *truss2d) ID() string {
-	return t.id
-}
-
-// NewTruss2d returns a new linear-elastic 2d truss implementation, parametrised by its
-// connectivity, cross section and Young's modulus (both assumed to be constant over the length),
-// and hinges.
+// NewTruss2d returns a new linear-elastic 2d truss implementation.
 func NewTruss2d(
 	id string,
 	n0, n1 *Node,
 	material *Material,
-	disjoint Truss2dDisjoint) (Element, error) {
-	// Any non-zero length is technically okay (even if not advisable), so use equality here to
-	// detect actual zero-length trusses:
-	if length(n0, n1) == 0.0 {
-		return nil, fmt.Errorf("zero-length truss with nodes %v and %v", n0, n1)
-	} else if id == "" {
-		return nil, fmt.Errorf("element IDs can't be empty")
+	disjoint Truss2dDisjoint,
+) (Element, error) {
+	common, err := newOneDimElement(id, n0, n1, material)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate new 2d truss: %w", err)
 	}
 
-	return &truss2d{id: id, n0: n0, n1: n1, material: material, disjoint: disjoint}, nil
+	return &truss2d{oneDimElement: common, disjoint: disjoint}, nil
 }

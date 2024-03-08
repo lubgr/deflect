@@ -8,39 +8,10 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-var exampleMat = Material{
-	CrossSection: &rectangular{0.1, 0.1},
-	LinearElastic: LinearElastic{
-		YoungsModulus: 100000.0 / (1e-3 * 1e-3),
-		PoissonsRatio: 0.3,
-		Density:       1,
-	},
-}
-
 func truss2dTestNodes() (n0, n1 *Node) {
 	n0 = &Node{ID: "A", X: 0, Z: 0}
 	n1 = &Node{ID: "B", X: 1, Z: 0}
 	return
-}
-
-func TestTruss2dCtorFailsOnZeroLength(t *testing.T) {
-	n0 := &Node{ID: "A", X: 2, Y: 3, Z: -5}
-	n1 := &Node{ID: "B", X: 2, Y: 3, Z: -5}
-
-	actual, err := NewTruss2d("AB", n0, n1, &exampleMat, Truss2dDisjointNone)
-
-	if err == nil || actual != nil {
-		t.Errorf("Truss creation succeeded despite zero length, got %v", actual)
-	}
-}
-
-func TestTruss2dCtorFailsOnEmptyElementId(t *testing.T) {
-	n0, n1 := truss2dTestNodes()
-	actual, err := NewTruss2d("", n0, n1, &exampleMat, Truss2dDisjointNone)
-
-	if err == nil || actual != nil {
-		t.Errorf("Truss creation succeeded despite empty element id, got %v", actual)
-	}
 }
 
 func TestTruss2dCtorSuccess(t *testing.T) {
@@ -49,27 +20,6 @@ func TestTruss2dCtorSuccess(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("Expected successful NewTruss2d call, got %v", err)
-	}
-}
-
-func TestTruss2dReturnsID(t *testing.T) {
-	// Stupid test, candidate for removal from day one...
-	n0, n1 := truss2dTestNodes()
-	id := "ID123"
-	truss, _ := NewTruss2d(id, n0, n1, &exampleMat, Truss2dDisjointNone)
-
-	if actual := truss.ID(); actual != id {
-		t.Errorf("Expected truss to return an ID as %v, but got %v", id, actual)
-	}
-}
-
-func TestTruss2dNumNodes(t *testing.T) {
-	n0, n1 := truss2dTestNodes()
-	truss, _ := NewTruss2d("ID", n0, n1, &exampleMat, Truss2dDisjointNone)
-	actual := truss.NumNodes()
-
-	if actual != 2 {
-		t.Errorf("Expected 2d truss to indicate 2 connected nodes, got %v", actual)
 	}
 }
 
@@ -129,7 +79,8 @@ func TestTruss2dRotationMatrix(t *testing.T) {
 	for _, test := range cases {
 		n0 := &Node{ID: "A", X: 2, Z: 2}
 		n1 := &Node{ID: "B", X: test.x1, Z: test.z1}
-		truss := &truss2d{"ID", n0, n1, &exampleMat, Truss2dDisjointNone}
+		common, _ := newOneDimElement("ID", n0, n1, &exampleMat)
+		truss := &truss2d{common, Truss2dDisjointNone}
 		actual := mat.NewVecDense(4, nil)
 		actual.MulVec(truss.rotation(), test.local)
 
@@ -161,7 +112,8 @@ func TestTruss2dLocalTangent(t *testing.T) {
 		material := exampleMat
 		material.YoungsModulus = test.youngs
 		material.CrossSection, _ = NewRectangularCrossSection(test.b, test.h)
-		truss := &truss2d{"AB", n0, n1, &material, test.disjoint}
+		common, _ := newOneDimElement("AB", n0, n1, &material)
+		truss := &truss2d{common, test.disjoint}
 		actual := truss.localTangent()
 
 		expected := mat.NewSymDense(4, nil)
