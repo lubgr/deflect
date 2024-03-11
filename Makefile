@@ -6,10 +6,6 @@ default: build
 build:
 	go build ./...
 
-.PHONY: fmt
-fmt:
-	goimports -d . | patch
-
 .PHONY: lint
 lint:
 	pre-commit run --all-files
