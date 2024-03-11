@@ -14,6 +14,11 @@ fmt:
 lint:
 	pre-commit run --all-files
 
+.PHONY: pre-commit
+pre-commit:
+	# If this succeeds, running git commit --no-verify should be okay
+	./bin/clean-staged-pre-commit.sh
+
 .PHONY: test
 test:
 	go test -race ./...
