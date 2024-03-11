@@ -68,6 +68,7 @@ type Material struct {
 type CrossSection interface {
 	// Area returns the cross section's area in m^2
 	Area() float64
+	Iyy() float64
 }
 
 // NeumannElementBC is an opaque handle to be downcast by element implementations. It is always

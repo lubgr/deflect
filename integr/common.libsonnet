@@ -85,6 +85,17 @@
       },
     },
 
+  Generic(id, A, Iyy)::
+    {
+      [id]: {
+        kind: 'constants',
+        parameter: {
+          A: A,
+          Iyy: Iyy,
+        },
+      },
+    },
+
   Defaults(material='default', cs='default')::
     {
       local common = {
