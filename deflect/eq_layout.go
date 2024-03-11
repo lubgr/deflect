@@ -40,6 +40,11 @@ func (il *EqLayout) MapTwo(isym, jsym Index) (i, j int) {
 	return il.MapOne(isym), il.MapOne(jsym)
 }
 
+// MapThree is identical to [MapOne], but with three lookups.
+func (il *EqLayout) MapThree(isym, jsym, ksym Index) (i, j, k int) {
+	return il.MapOne(isym), il.MapOne(jsym), il.MapOne(ksym)
+}
+
 // MapFour is identical to [MapOne], but with four lookups.
 func (il *EqLayout) MapFour(isym, jsym, ksym, lsym Index) (i, j, k, l int) {
 	return il.MapOne(isym), il.MapOne(jsym), il.MapOne(ksym), il.MapOne(lsym)
