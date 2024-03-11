@@ -57,3 +57,40 @@ func TestOneDimElementNumNodes(t *testing.T) {
 		t.Errorf("Expected 1d element to indicate 2 connected nodes, got %v", actual)
 	}
 }
+
+func TestOneDimElementBCStorage(t *testing.T) {
+	n0, n1 := oneDimElementTestNodes()
+	e, _ := newOneDimElement("ID", n0, n1, &exampleMat)
+	data := []int{100, 200, 300, 400, 500}
+	load := []NeumannElementBC{&data[0], &data[1], &data[2], &data[3], &data[4]}
+
+	e.AddLoad(load[0])
+	e.AddLoad(load[1])
+	e.AddLoad(load[2])
+	e.AddLoad(load[2]) // Adding the same load multiple times is supported
+	e.AddLoad(load[3])
+	e.AddLoad(load[2])
+
+	if n := len(e.loads); n != 6 {
+		t.Errorf("Each Element BC must be accounted for once, expected 6 BC, got %v", n)
+	}
+
+	removal := []struct {
+		remove    NeumannElementBC
+		remaining int
+	}{
+		{remove: load[4], remaining: 6},
+		{remove: load[0], remaining: 5},
+		{remove: load[3], remaining: 4},
+		{remove: load[2], remaining: 1},
+		{remove: load[1], remaining: 0},
+		{remove: load[1], remaining: 0},
+	}
+
+	for _, test := range removal {
+		e.RemoveLoad(test.remove)
+		if n := len(e.loads); n != test.remaining {
+			t.Errorf("Expected %v remaining BC after preceding removal, got %v", test.remaining, n)
+		}
+	}
+}

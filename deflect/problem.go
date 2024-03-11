@@ -70,6 +70,10 @@ type CrossSection interface {
 	Area() float64
 }
 
+// NeumannElementBC is an opaque handle to be downcast by element implementations. It is always
+// instantiated with a pointer.
+type NeumannElementBC any
+
 // Element defines the common API of any finite element formulation implemented in this package.
 type Element interface {
 	// Assemble adds entries to the given tangent k and residual r, using the current primary nodal
@@ -77,6 +81,12 @@ type Element interface {
 	// entities, and the element uses indices to map symbolic indices to plain matrix indices, which
 	// can be used to access the global matrices.
 	Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense)
+	// AddLoad stores the given Neumann boundary condition to be used by the [Element.Assemble]
+	// implementation. The same load can be added multiple times.
+	AddLoad(bc NeumannElementBC)
+	// RemoveLoad removes the given load. If there are multiple instances of the same load instance,
+	// they are all removed.
+	RemoveLoad(bc NeumannElementBC)
 	// Indices adds the indices this element uses (pairing of degree of freedom and nodal id) to set.
 	Indices(set map[Index]struct{})
 	// NumNodes returns the number of nodes this element is connected to.

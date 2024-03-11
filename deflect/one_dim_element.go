@@ -1,6 +1,9 @@
 package deflect
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // oneDimElement holds state that is common to all 1d elements with 2 nodes; trusses, beams, and
 // frames.
@@ -8,6 +11,25 @@ type oneDimElement struct {
 	id       string
 	n0, n1   *Node
 	material *Material
+	loads    []NeumannElementBC
+}
+
+func (e *oneDimElement) AddLoad(bc NeumannElementBC) {
+	e.loads = append(e.loads, bc)
+}
+
+func (e *oneDimElement) RemoveLoad(bc NeumannElementBC) {
+	for {
+		i := slices.Index(e.loads, bc)
+
+		if i == -1 {
+			break
+		}
+
+		var zeroForGC NeumannElementBC
+		e.loads[i] = zeroForGC
+		e.loads = slices.Delete(e.loads, i, i+1)
+	}
 }
 
 func (e *oneDimElement) NumNodes() uint {
