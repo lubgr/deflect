@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/gonum/spatial/r3"
 )
 
 // Truss2dDisjoint specifies how a 2d truss is connected to its first and second node.
@@ -82,12 +81,7 @@ func (t *truss2d) localTangent() *mat.SymDense {
 }
 
 func (t *truss2d) rotation() *mat.Dense {
-	// Gonum's spatial/r2 package doesn't seem to have a way to create a matrix representation of a 2d
-	// rotation (only for 3d), so we do it manually.
-	line := r3.Sub(r3.Vec{X: t.n1.X, Y: t.n1.Y, Z: t.n1.Z},
-		r3.Vec{X: t.n0.X, Y: t.n0.Y, Z: t.n0.Z})
-	cos := r3.Cos(line, r3.Vec{X: 1.0, Y: 0.0, Z: 0.0})
-	sin := r3.Cos(line, r3.Vec{X: 0.0, Y: 0.0, Z: 1.0})
+	s, c := sineCosine2d(t.n0, t.n1)
 
 	// Given the local xyz coordinate system	(x right, z downwards) and the global one (X right, Z
 	// upwards), we can think of the correct coordinate transformation as two steps. First, the
@@ -104,15 +98,15 @@ func (t *truss2d) rotation() *mat.Dense {
 	// doesn't hold for all rotation matrices, so we still pick a non-symmetric matrix type.
 	r := mat.NewDense(4, 4, nil)
 
-	r.Set(0, 0, cos)
-	r.Set(0, 1, sin)
-	r.Set(1, 0, sin)
-	r.Set(1, 1, -cos)
+	r.Set(0, 0, c)
+	r.Set(0, 1, s)
+	r.Set(1, 0, s)
+	r.Set(1, 1, -c)
 
-	r.Set(2, 2, cos)
-	r.Set(2, 3, sin)
-	r.Set(3, 2, sin)
-	r.Set(3, 3, -cos)
+	r.Set(2, 2, c)
+	r.Set(2, 3, s)
+	r.Set(3, 2, s)
+	r.Set(3, 3, -c)
 
 	return r
 }
