@@ -14,8 +14,9 @@ type oneDimElement struct {
 	loads    []NeumannElementBC
 }
 
-func (e *oneDimElement) AddLoad(bc NeumannElementBC) {
+func (e *oneDimElement) AddLoad(bc NeumannElementBC) bool {
 	e.loads = append(e.loads, bc)
+	return true
 }
 
 func (e *oneDimElement) RemoveLoad(bc NeumannElementBC) {

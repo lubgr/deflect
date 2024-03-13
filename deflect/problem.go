@@ -83,10 +83,11 @@ type Element interface {
 	// can be used to access the global matrices.
 	Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense)
 	// AddLoad stores the given Neumann boundary condition to be used by the [Element.Assemble]
-	// implementation. The same load can be added multiple times.
-	AddLoad(bc NeumannElementBC)
+	// implementation. The same load can be added multiple times. The boolean return value indicates
+	// if the load could be applied. If the inability to apply a BC is an error is up to the caller.
+	AddLoad(bc NeumannElementBC) bool
 	// RemoveLoad removes the given load. If there are multiple instances of the same load instance,
-	// they are all removed.
+	// they are all removed. Removing a load that has previously not been added has no effect.
 	RemoveLoad(bc NeumannElementBC)
 	// Indices adds the indices this element uses (pairing of degree of freedom and nodal id) to set.
 	Indices(set map[Index]struct{})

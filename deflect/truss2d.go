@@ -117,6 +117,25 @@ func (t *truss2d) Indices(set map[Index]struct{}) {
 	}
 }
 
+func (t *truss2d) AddLoad(bc NeumannElementBC) bool {
+	var kind Dof
+
+	switch load := bc.(type) {
+	case *neumannElementConcentrated:
+		kind = load.kind
+	case *neumannElementConstant:
+		kind = load.kind
+	case *neumannElementLinear:
+		kind = load.kind
+	}
+
+	if kind == Ux {
+		return t.oneDimElement.AddLoad(bc)
+	}
+
+	return false
+}
+
 // NewTruss2d returns a new linear-elastic 2d truss implementation.
 func NewTruss2d(
 	id string,
