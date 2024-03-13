@@ -260,29 +260,38 @@ func translateMaterials(from map[string]matDescription) (map[string]LinearElasti
 
 func translateCrossSections(from map[string]csDescription) (map[string]CrossSection, error) {
 	cs := map[string]CrossSection{}
+	var errs []error
+	fail := func(msg string, a ...any) { errs = append(errs, fmt.Errorf(msg, a...)) }
 
 	for id, desc := range from {
-		if desc.Kind != "rectangle" {
-			return cs, fmt.Errorf("unsupported cross section '%v'", desc.Kind)
+		switch desc.Kind {
+
+		case "rectangle":
+			b, foundB := desc.Parameter["b"]
+			h, foundH := desc.Parameter["h"]
+
+			if !foundB || !foundH {
+				fail("cross section parameters 'b', and/or 'h' not found")
+				continue
+			} else if rect, err := NewRectangularCrossSection(b, h); err != nil {
+				fail("create rectangular cross section: %w", err)
+			} else {
+				cs[id] = rect
+			}
+		case "constants":
+			constants, err := NewConstantsCrossSections(desc.Parameter)
+
+			if err != nil {
+				fail("create constants-based cross section: %w", err)
+			} else {
+				cs[id] = constants
+			}
+		default:
+			fail("unsupported cross section '%v'", desc.Kind)
 		}
-
-		b, found0 := desc.Parameter["b"]
-		h, found1 := desc.Parameter["h"]
-
-		if !found0 || !found1 {
-			return cs, fmt.Errorf("cross section parameters 'b', and/or 'h' not found")
-		}
-
-		rect, err := NewRectangularCrossSection(b, h)
-
-		if err != nil {
-			return cs, fmt.Errorf("create rectangular cross section: %w", err)
-		}
-
-		cs[id] = rect
 	}
 
-	return cs, nil
+	return cs, errors.Join(errs...)
 }
 
 func translateDirichletBCs(
