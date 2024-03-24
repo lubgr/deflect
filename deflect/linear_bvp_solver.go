@@ -53,7 +53,9 @@ func (s *linearSolver) Solve(
 	}
 
 	for _, bc := range p.Neumann {
-		r.SetVec(indices.MapOne(bc.Index), bc.Value)
+		i := indices.MapOne(bc.Index)
+		ri := r.AtVec(i)
+		r.SetVec(i, ri+bc.Value)
 	}
 
 	for _, transform := range p.EqTransforms {
