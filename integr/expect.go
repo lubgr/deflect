@@ -62,21 +62,39 @@ func (e *regexFailureExpectation) Failure(err error, t *testing.T) {
 
 type nodalExpectation struct {
 	noopExpectation
-	primary   []deflect.NodalValue
-	reactions []deflect.NodalValue
+	primary, reactions      []deflect.NodalValue
+	tolPrimary, tolReaction float64
+}
+
+func newNodalExpectation(primary, reaction *float64) nodalExpectation {
+	result := nodalExpectation{tolPrimary: 1e-8, tolReaction: 1e-8}
+
+	if primary != nil {
+		result.tolPrimary = *primary
+	}
+	if reaction != nil {
+		result.tolReaction = *reaction
+	}
+
+	return result
 }
 
 func (e *nodalExpectation) Reaction(r []deflect.NodalValue, t *testing.T) {
 	t.Helper()
-	e.nodal("reaction", r, e.reactions, t)
+	e.nodal("reaction", r, e.reactions, e.tolReaction, t)
 }
 
 func (e *nodalExpectation) Primary(d []deflect.NodalValue, t *testing.T) {
 	t.Helper()
-	e.nodal("primary", d, e.primary, t)
+	e.nodal("primary", d, e.primary, e.tolPrimary, t)
 }
 
-func (e *nodalExpectation) nodal(desc string, actual, expected []deflect.NodalValue, t *testing.T) {
+func (e *nodalExpectation) nodal(
+	desc string,
+	actual, expected []deflect.NodalValue,
+	tol float64,
+	t *testing.T,
+) {
 	t.Helper()
 
 	for _, exp := range expected {
@@ -91,7 +109,7 @@ func (e *nodalExpectation) nodal(desc string, actual, expected []deflect.NodalVa
 			continue
 		}
 
-		approxEqual := scalar.EqualWithinAbsOrRel(actual[pos].Value, exp.Value, 1e-8, 1e-8)
+		approxEqual := scalar.EqualWithinAbsOrRel(actual[pos].Value, exp.Value, 1e-8, tol)
 
 		if !approxEqual {
 			t.Errorf(
@@ -120,6 +138,7 @@ type expectedInterpolationDescription struct {
 }
 
 type expectedDescription struct {
+	Tolerance     struct{ Primary, Reaction *float64 }
 	Primary       map[string][]nodalValues
 	Reaction      map[string][]nodalValues
 	Interpolation expectedInterpolationDescription
@@ -139,8 +158,8 @@ func ExpectFromJSON(data []byte) ([]Expectation, error) {
 		return nil, fmt.Errorf("couldn't build expectations from JSON: %w", err)
 	}
 
+	nodal := newNodalExpectation(tmp.Expected.Tolerance.Primary, tmp.Expected.Tolerance.Reaction)
 	var result []Expectation
-	var nodal nodalExpectation
 	var errPrimary, errReact error
 
 	if tmp.Expected.Failure == nil {
