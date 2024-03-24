@@ -2,7 +2,6 @@ package deflect
 
 import (
 	"fmt"
-	"log"
 	"slices"
 
 	"gonum.org/v1/gonum/floats/scalar"
@@ -37,8 +36,6 @@ func (s *linearSolver) Solve(
 	if err := s.initialise(indices.EqSize(), len(p.Dirichlet)); err != nil {
 		return nil, nil, err
 	}
-
-	log.Printf("Start assembly and solution for %v unknowns, %v with BC", s.dim-s.constrained, s.dim)
 
 	k, r, d, scratch := s.eqn.k, s.eqn.r, s.eqn.d, s.eqn.scratch
 	k11, k12, k22 := s.eqn.k11, s.eqn.k12, s.eqn.k22
