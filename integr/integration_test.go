@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"unsafe"
@@ -17,7 +18,10 @@ func TestIntegration(t *testing.T) {
 	vm := jsonnet.MakeVM()
 
 	for _, file := range allTestFiles("*.jsonnet", t) {
-		t.Run(filepath.Base(file), func(t *testing.T) {
+		basepath := filepath.Base(file)
+		basename, _ := strings.CutSuffix(basepath, ".jsonnet")
+
+		t.Run(basename, func(t *testing.T) {
 			t.Parallel()
 
 			mutex.Lock()
@@ -29,8 +33,9 @@ func TestIntegration(t *testing.T) {
 			}
 
 			for _, input := range jsonAsMultiPart(testJSON, t) {
-				name := extractName(input, t)
+				name := extractName(input, basepath, t)
 				t.Run(name, func(t *testing.T) {
+					t.Parallel()
 					runTestCase(input, t)
 				})
 			}
@@ -82,7 +87,9 @@ func jsonAsMultiPart(input string, t *testing.T) [][]byte {
 	return result
 }
 
-func extractName(input []byte, t *testing.T) string {
+func extractName(input []byte, file string, t *testing.T) string {
+	t.Helper()
+
 	var tmp struct {
 		Name *string
 	}
