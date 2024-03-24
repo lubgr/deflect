@@ -103,11 +103,17 @@
         cs: cs,
       },
 
-      Truss2d(nodes=[], disjoint=[])::
+      Truss2d(nodes=[], hinges={})::
         common {
           kind: 'truss2d',
           [if std.length(nodes) > 0 then 'nodes']: nodes,
-          [if std.length(disjoint) > 0 then 'disjoint']: disjoint,
+          [if std.length(hinges) > 0 then 'hinges']: hinges,
+        },
+      Frame2d(nodes=[], hinges={})::
+        common {
+          kind: 'frame2d',
+          [if std.length(nodes) > 0 then 'nodes']: nodes,
+          [if std.length(hinges) > 0 then 'hinges']: hinges,
         },
     },
 }
