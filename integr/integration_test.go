@@ -99,6 +99,7 @@ func extractName(input []byte, file string, t *testing.T) string {
 	if err := json.Unmarshal(input, &tmp); err != nil {
 		t.Fatalf("Couldn't extract description from JSON: %v", err)
 	} else if tmp.Name == nil {
+		t.Fatalf("All toplevel JSON BVPs in %v must have the 'name' field", file)
 		return ""
 	}
 
