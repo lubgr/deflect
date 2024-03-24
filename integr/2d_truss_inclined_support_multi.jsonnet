@@ -17,7 +17,7 @@ local structure(alpha, beta, gamma, a) = {
     N3: [2 * a, 0, a],
   },
 
-  material: lib.LinElast('default', E=30000 * 1e6, nu=0.3, rho=1),
+  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
   crosssection: lib.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
