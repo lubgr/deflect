@@ -18,7 +18,7 @@ dir=`mktemp -d`
 trap "rm -rf ${dir}" EXIT
 
 git clone . "${dir}"
-git diff --staged | git -C "${dir}" apply --allow-empty
+git diff --staged | git -C "${dir}" apply --index --allow-empty
 
 pushd ${dir}
 
