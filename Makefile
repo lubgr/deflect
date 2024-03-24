@@ -17,7 +17,7 @@ pre-commit:
 
 .PHONY: test
 test:
-	go test -race ./...
+	go test -race -parallel 8 ./...
 
 .PHONY: wasm
 wasm:

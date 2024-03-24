@@ -15,7 +15,7 @@ repos:
       - id: build
         fail_fast: true
       - id: test
-        args: [-cover, -race, ./...]
+        args: [-parallel, '8', ./...]
       - id: vet
       - id: mod-tidy
       - id: staticcheck
