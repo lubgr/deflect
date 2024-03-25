@@ -2,7 +2,6 @@ package integr
 
 import (
 	"encoding/json"
-	"errors"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -112,8 +111,15 @@ func runTestCase(input []byte, t *testing.T) {
 	problem, errProblem := deflect.FromJSON(input)
 	expect, errExpect := ExpectFromJSON(input)
 
-	if err := errors.Join(errProblem, errExpect); err != nil {
-		t.Fatalf("Failed to build BVP/expectations from JSON: %v", err)
+	if errExpect != nil {
+		t.Fatalf("Failed to build expectations from JSON: %v", errExpect)
+	}
+
+	if errProblem != nil {
+		for _, e := range expect {
+			e.Failure(errProblem, t)
+		}
+		return
 	}
 
 	indices, err := deflect.NewEqLayout(&problem)
