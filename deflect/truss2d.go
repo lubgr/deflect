@@ -40,7 +40,7 @@ func (t *truss2d) Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense
 	}
 
 	idx := t.indicesAsArray()
-	ux0, uz0, ux1, uz1 := indices.MapFour(idx[0], idx[1], idx[2], idx[3])
+	ux0, uz0, ux1, uz1 := indices.mapFour(idx[0], idx[1], idx[2], idx[3])
 
 	s, c := sineCosine2d(t.n0, t.n1)
 	s2, c2, sc := s*s, c*c, s*c

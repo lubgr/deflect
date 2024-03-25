@@ -21,38 +21,38 @@ type EqLayout struct {
 	failed   []string
 }
 
-// EqSize returns the total size of the system of equations, including Dirichlet-constrained nodes.
-func (il *EqLayout) EqSize() int {
+// eqSize returns the total size of the system of equations, including Dirichlet-constrained nodes.
+func (il *EqLayout) eqSize() int {
 	return len(il.indices)
 }
 
-// MapOne looks up and returns the mapped-to plain matrix index. Returns zero if isym is not mapped
-// and internally accumulates an error, see [EqLayout.Failure] and [EqLayout].
-func (il *EqLayout) MapOne(isym Index) (i int) {
+// mapOne looks up and returns the mapped-to plain matrix index. Returns zero if isym is not mapped
+// and internally accumulates an error, see [EqLayout.failure] and [EqLayout].
+func (il *EqLayout) mapOne(isym Index) (i int) {
 	var ok bool
 	i, ok = il.indices[isym]
 	il.saveFailure(ok, isym)
 	return i
 }
 
-// MapTwo is identical to [MapOne], but with two lookups.
-func (il *EqLayout) MapTwo(isym, jsym Index) (i, j int) {
-	return il.MapOne(isym), il.MapOne(jsym)
+// mapTwo is identical to [mapOne], but with two lookups.
+func (il *EqLayout) mapTwo(isym, jsym Index) (i, j int) {
+	return il.mapOne(isym), il.mapOne(jsym)
 }
 
-// MapThree is identical to [MapOne], but with three lookups.
-func (il *EqLayout) MapThree(isym, jsym, ksym Index) (i, j, k int) {
-	return il.MapOne(isym), il.MapOne(jsym), il.MapOne(ksym)
+// mapThree is identical to [mapOne], but with three lookups.
+func (il *EqLayout) mapThree(isym, jsym, ksym Index) (i, j, k int) {
+	return il.mapOne(isym), il.mapOne(jsym), il.mapOne(ksym)
 }
 
-// MapFour is identical to [MapOne], but with four lookups.
-func (il *EqLayout) MapFour(isym, jsym, ksym, lsym Index) (i, j, k, l int) {
-	return il.MapOne(isym), il.MapOne(jsym), il.MapOne(ksym), il.MapOne(lsym)
+// mapFour is identical to [mapOne], but with four lookups.
+func (il *EqLayout) mapFour(isym, jsym, ksym, lsym Index) (i, j, k, l int) {
+	return il.mapOne(isym), il.mapOne(jsym), il.mapOne(ksym), il.mapOne(lsym)
 }
 
-// Unmap looks up the reverse mapping, but does not implement any error handling - i must have been
-// retrieved by lookup functions like [MapOne] beforehand.
-func (il *EqLayout) Unmap(i int) (isym Index) {
+// unmap looks up the reverse mapping, but does not implement any error handling - i must have been
+// retrieved by lookup functions like [mapOne] beforehand.
+func (il *EqLayout) unmap(i int) (isym Index) {
 	return il.inverse[i]
 }
 
@@ -66,10 +66,10 @@ func (il *EqLayout) saveFailure(ok bool, symbolic Index) {
 	}
 }
 
-// Failure returns a non-nil error if any of the preceding lookup operations failed. The internal
+// failure returns a non-nil error if any of the preceding lookup operations failed. The internal
 // error state is _not_ flushed. In order to clear the error, a new EqLayout instance must be
 // instantiated.
-func (il *EqLayout) Failure() error {
+func (il *EqLayout) failure() error {
 	if il.failures == 0 {
 		return nil
 	}

@@ -45,8 +45,8 @@ func (b *beam2d) Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense)
 	}
 
 	idx := b.indicesAsArray()
-	ux0, uz0, phiy0 := indices.MapThree(idx[0], idx[1], idx[2])
-	ux1, uz1, phiy1 := indices.MapThree(idx[3], idx[4], idx[5])
+	ux0, uz0, phiy0 := indices.mapThree(idx[0], idx[1], idx[2])
+	ux1, uz1, phiy1 := indices.mapThree(idx[3], idx[4], idx[5])
 
 	s, c := sineCosine2d(b.n0, b.n1)
 	s2, c2, sc := s*s, c*c, s*c

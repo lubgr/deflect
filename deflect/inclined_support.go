@@ -39,7 +39,7 @@ func (l *inclinedSupport) Pre(indices EqLayout, k *mat.SymDense, r, d *mat.VecDe
 		l.jrow = mat.NewVecDense(dim, nil)
 	}
 
-	i, j := indices.MapTwo(l.from, l.to)
+	i, j := indices.mapTwo(l.from, l.to)
 
 	l.transformTangent(i, j, k)
 	l.transformVec(i, j, angularLinkPhasePre, r)
@@ -49,7 +49,7 @@ func (l *inclinedSupport) Pre(indices EqLayout, k *mat.SymDense, r, d *mat.VecDe
 func (l *inclinedSupport) Post(indices EqLayout, r, d *mat.VecDense) {
 	// No need to check for the initialisation of l's bufffers, since l.Pre must have been called
 	// before l.Post, and l.Pre would initialise them.
-	i, j := indices.MapTwo(l.from, l.to)
+	i, j := indices.mapTwo(l.from, l.to)
 
 	l.transformVec(i, j, angularLinkPhasePost, r)
 	l.transformVec(i, j, angularLinkPhasePost, d)

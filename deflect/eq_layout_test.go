@@ -46,19 +46,19 @@ func TestEqLayoutLookup(t *testing.T) {
 	})
 
 	for symbolic, expected := range layout.indices {
-		if i := layout.MapOne(symbolic); i != expected {
+		if i := layout.mapOne(symbolic); i != expected {
 			t.Errorf("Expected %v mapped to %v, got %v", symbolic, expected, i)
 		}
-		if reverse := layout.Unmap(expected); reverse != symbolic {
+		if reverse := layout.unmap(expected); reverse != symbolic {
 			t.Errorf("Expected %v mapped back to %v, got %v", expected, symbolic, reverse)
 		}
 	}
 
-	if err := layout.Failure(); err != nil {
+	if err := layout.failure(); err != nil {
 		t.Errorf("Expected successful lookups up to here, got %v", err)
 	}
 
-	layout.MapTwo(Index{NodalID: "X", Dof: Ux}, Index{NodalID: "A", Dof: Phix})
+	layout.mapTwo(Index{NodalID: "X", Dof: Ux}, Index{NodalID: "A", Dof: Phix})
 
 	if layout.failures != 2 {
 		t.Errorf("Expected lookup failure count to mirror invalid lookups, got %v", layout.failures)
