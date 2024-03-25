@@ -270,6 +270,60 @@ local fz_hinge_uz_phi_leftward_2(F, l) = fz_hinge_uz_phi_rightward_2(F, l) + {
   },
 };
 
+local hinge_fails = {
+  // We constrain most dofs, so that the provoked failure is always attributed to the hinge pattern.
+  dirichlet: {
+    A: lib.Ux() + lib.Uz() + lib.Phiy(),
+    B: lib.Uz(),
+    C: lib.Uz(),
+    D: lib.Ux() + lib.Uz() + lib.Phiy(),
+  },
+
+  expected: {
+    failure: 'unsupported.*hinge',
+  },
+};
+
+local fz_hinge_uz_uz_fails(F, l) = fz_common(F, l) + hinge_fails {
+  name: 'fz_hinge_uz_uz_fails',
+
+  elements: {
+    BA: default.Frame2d(),
+    CB: default.Frame2d(hinges={ B: ['Uz'], C: ['Uz'] }),
+    DC: default.Frame2d(),
+  },
+};
+
+local fz_hinge_uz_phi_left_fails(F, l) = fz_common(F, l) + hinge_fails {
+  name: 'fz_hinge_uz_phi_left_fails',
+
+  elements: {
+    AB: default.Frame2d(),
+    BC: default.Frame2d(hinges={ B: ['Uz', 'Phiy'] }),
+    CD: default.Frame2d(),
+  },
+};
+
+local fz_hinge_uz_phi_right_fails(F, l) = fz_common(F, l) + hinge_fails {
+  name: 'fz_hinge_uz_phi_right_fails',
+
+  elements: {
+    BA: default.Frame2d(),
+    CB: default.Frame2d(hinges={ B: ['Uz', 'Phiy'] }),
+    DC: default.Frame2d(),
+  },
+};
+
+local fz_hinge_ux_ux_fails(F, l) = fz_common(F, l) + hinge_fails + {
+  name: 'fz_hinge_ux_ux_fails',
+
+  elements: {
+    AB: default.Frame2d(),
+    BC: default.Frame2d(hinges={ B: ['Ux'], C: ['Ux'] }),
+    CD: default.Frame2d(),
+  },
+};
+
 [
   qz_hinge_phi_rightward(1.5e3, 3),
   qz_hinge_phi_leftward(2.5e3, 4),
@@ -292,4 +346,11 @@ local fz_hinge_uz_phi_leftward_2(F, l) = fz_hinge_uz_phi_rightward_2(F, l) + {
   fz_hinge_uz_phi_leftward_1(12.5e3, 1.5),
   fz_hinge_uz_phi_rightward_2(12.5e3, 1.75),
   fz_hinge_uz_phi_leftward_2(12.5e3, 1.75),
+]
++
+[
+  fz_hinge_uz_uz_fails(10e3, 1),
+  fz_hinge_uz_phi_left_fails(10e3, 1),
+  fz_hinge_uz_phi_right_fails(10e3, 1),
+  fz_hinge_ux_ux_fails(10e3, 1),
 ]
