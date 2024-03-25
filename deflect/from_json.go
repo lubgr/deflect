@@ -109,6 +109,8 @@ func FromJSON(data []byte) (Problem, error) {
 
 	if err := errors.Join(errDirichlet, errNeumann0, errNeumann1, errLinks); err != nil {
 		return Problem{}, fmt.Errorf("construct BCs: %w", err)
+	} else if len(dirichletBCs)+len(linkBCs) == 0 {
+		return Problem{}, errors.New("can't construct a BVP with no Dirichlet BC")
 	}
 
 	result := Problem{
