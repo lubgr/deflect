@@ -1,0 +1,22 @@
+name: Pre-commit hooks, build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test-pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.22.0
+      - run: go build ./...
+      - run: go test -race -parallel 8 ./...
+      - name: pre-commit-ci-lite
+        env:
+          SKIP: build,test  # This is run before
+        uses: pre-commit-ci/lite-action@v1.0.2
+        if: always()
