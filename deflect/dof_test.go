@@ -4,8 +4,8 @@ import "testing"
 
 func TestDofStringer(t *testing.T) {
 	actual := Ux.String()
-	if actual != "u_x" {
-		t.Errorf("Expected Dof's String() to be 'u_x', got '%v'", actual)
+	if actual != "Ux" {
+		t.Errorf("Expected Dof's String() to be 'Ux', got '%v'", actual)
 	}
 }
 

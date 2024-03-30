@@ -6,6 +6,10 @@ default: build
 build:
 	go build ./...
 
+.PHONY: generate
+generate:
+	go generate ./...
+
 .PHONY: lint
 lint:
 	pre-commit run --all-files

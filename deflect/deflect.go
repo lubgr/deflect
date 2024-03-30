@@ -4,26 +4,22 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Dof describes a degree of freedom symbolically and with a prefix to help maintain an intuitive
-// ordering, e.g. horizontal displacement 'u_x' is listed before a rotation 'phi_y'. Dof instances
-// should not be created by clients, use the predefined constants instead.
-type Dof string
+// Dof describes a degree of freedom symbolically and with an intuitive ordering. The predefined
+// constants shall be used.
+//
+//go:generate go run golang.org/x/tools/cmd/stringer -type=Dof
+type Dof uint8
 
 // Pre-defined degrees of freedom. The sort order prefixes should be treated as implementation
 // details.
 const (
-	Ux   Dof = "00_u_x"
-	Uz   Dof = "01_u_z"
-	Uy   Dof = "02_u_y"
-	Phiy Dof = "03_phi_y"
-	Phiz Dof = "04_phi_z"
-	Phix Dof = "05_phi_x"
+	Ux Dof = iota
+	Uz
+	Uy
+	Phiy
+	Phiz
+	Phix
 )
-
-// String returns the Dof description without the leading sort order prefix.
-func (dof Dof) String() string {
-	return string(dof)[3:]
-}
 
 // Node describes a mesh vertex by 3-dimensional coordinates and an identifier. Coordinates are
 // always in meters.
