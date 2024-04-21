@@ -17,7 +17,7 @@ lint:
 .PHONY: pre-commit
 pre-commit:
 	# If this succeeds, running git commit --no-verify should be okay
-	./scripts/clean-staged-pre-commit.sh
+	./scripts/clean_staged_pre_commit.sh
 
 .PHONY: test
 test:
