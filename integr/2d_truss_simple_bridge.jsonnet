@@ -66,6 +66,30 @@ local bridge(a) = {
       A: lib.Fx(0) + lib.Fz(20e3),
       E: lib.Fz(20e3),
     },
+    interpolation: {
+      local Nx(value) = lib.Constant('Nx', value),
+      // Lower horizontal:
+      AB: Nx(0),
+      BC: Nx(15e3),
+      CD: Nx(15e3),
+      DE: Nx(0),
+      // Upper horizontal:
+      FG: Nx(-15e3),
+      GH: Nx(-20e3),
+      HI: Nx(-20e3),
+      IJ: Nx(-15e3),
+      // Vertical:
+      AF: Nx(-20e3),
+      BG: Nx(-15e3),
+      CH: Nx(-10e3),
+      DI: Nx(-15e3),
+      EJ: Nx(-20e3),
+      // Diagonal:
+      FB: Nx(15e3 * std.sqrt(2)),
+      GC: Nx(5e3 * std.sqrt(2)),
+      CI: Nx(5e3 * std.sqrt(2)),
+      DJ: Nx(15e3 * std.sqrt(2)),
+    },
   },
 };
 

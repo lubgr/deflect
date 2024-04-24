@@ -32,6 +32,19 @@ local tilted_l = {
       A: lib.Fx(6e3) + lib.Fz(-1e3) + lib.My(3e3),
       D: lib.Fx(6e3) + lib.Fz(2e3),
     },
+    interpolation: {
+      AB: lib.Constant('Nx', -6e3) +
+          lib.Constant('Vz', -1e3) +
+          lib.Linear('My', 3e3, 0),
+      BC: lib.Constant('Nx', -6e3) +
+          lib.Constant('Vz', 2e3, range=[0, 1.5]) +
+          lib.Constant('Vz', -2e3, range=[1.5, 3]) +
+          lib.Linear('My', 0, 3e3, range=[0, 1.5]) +
+          lib.Linear('My', 3e3, 0, range=[1.5, 3]),
+      CD: lib.Constant('Nx', 2e3) +
+          lib.Linear('Vz', -6e3, 6e3) +
+          lib.Quadratic('My', eval=[[0, 0], [1.5, -4.5e3], [3, 0]]),
+    },
   },
 };
 
@@ -102,11 +115,41 @@ local double_plateau = {
   },
 
   expected: {
+    tolerance: {
+      polynomial: 5e-7,
+    },
+    // The sum of all horizontal forces:
+    local Fh = 4e3 * std.cos(30 / 180.0 * lib.pi) + 2e3 + 2e3 * 3,
+
     reaction: {
       A: lib.Fz(1e3),
-      B: lib.Fx(-11.4641016e3) + lib.Fz(-1e3),
+      B: lib.Fx(-Fh) + lib.Fz(-1e3),
       G: lib.Fz(15e3),
       H: lib.Fz(-7e3),
+    },
+    interpolation: {
+      AB: lib.Constant('Nx', 0) +
+          lib.Constant('Vz', 1e3) +
+          lib.Linear('My', 0, 3e3),
+      BC: lib.Constant('Nx', Fh, range=[0, 1.5]) +
+          lib.Constant('Nx', 8e3, range=[1.5, 3]) +
+          lib.Constant('Vz', 0, range=[0, 1.5]) +
+          lib.Constant('Vz', -2e3, range=[1.5, 3]) +
+          lib.Constant('My', 3e3, range=[0, 1.5]) +
+          lib.Linear('My', 3e3, 0, range=[1.5, 3]),
+      local lcd = 3 * std.sqrt(2),
+      CD: lib.Constant('Nx', 5e3 * std.sqrt(2)) +
+          lib.Linear('Vz', 2e3 * lcd / 2, -2e3 * lcd / 2) +
+          lib.Quadratic('My', eval=[[0, 0], [0.5 * lcd, 2e3 * lcd * lcd / 8], [lcd, 0]]),
+      DE: lib.Constant('Nx', 2e3) +
+          lib.Constant('Vz', -8e3) +
+          lib.Linear('My', 0, -12e3),
+      EF: lib.Constant('Nx', 0) +
+          lib.Constant('Vz', 2e3) +
+          lib.Linear('My', -3e3, 0),
+      EG: lib.Constant('Nx', 0) +
+          lib.Constant('Vz', -8e3) +
+          lib.Linear('My', -9e3, -21e3),
     },
   },
 };

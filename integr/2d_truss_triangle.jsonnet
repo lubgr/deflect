@@ -35,6 +35,11 @@ local triangle(H, V, a) = {
       A: lib.Fx(-H) + lib.Fz((H + V) / (-2)),
       B: lib.Fz((H - V) / 2),
     },
+    interpolation: {
+      CB: lib.Constant('Nx', -(H - V) / std.sqrt(2)),
+      AB: lib.Constant('Nx', (H - V) / 2),
+      AC: lib.Constant('Nx', (H + V) / std.sqrt(2)),
+    },
   },
 };
 

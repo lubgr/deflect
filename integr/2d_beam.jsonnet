@@ -43,13 +43,28 @@ local with_const_qz(q, l, E, Iyy) = common(l, E, Iyy) + horizontal(l) {
   },
 
   expected: {
+    local EI = E * Iyy,
+    local l3 = std.pow(l, 3),
+    local phiy = q * l3 / (24 * EI),
+
     primary: {
-      A: lib.Phiy(q * std.pow(l, 3) / (24 * E * Iyy)),
-      B: lib.Phiy(-q * std.pow(l, 3) / (24 * E * Iyy)),
+      A: lib.Phiy(phiy),
+      B: lib.Phiy(-phiy),
     },
     reaction: {
       A: lib.Fz(q * l / 2),
       B: lib.Fz(q * l / 2),
+    },
+    interpolation: {
+      AB: lib.Constant('Nx', 0) +
+          lib.Linear('Vz', q * l / 2, -q * l / 2) +
+          lib.Quadratic('My', eval=[[0, 0], [l / 2, q * l * l / 8], [l, 0]]) +
+          lib.Cubic('Phiy', eval=[[0, -phiy], [l / 2, 0], [l, phiy]]) +
+          lib.Quartic('Uz', eval=lib.Samples(
+            function(x)
+              local l4 = std.pow(l, 4);
+              q * l4 / (24 * EI) * (x / l - 2 * std.pow(x, 3) / l3 + std.pow(x, 4) / l4), 0, l, 20
+          )),
     },
   },
 };
@@ -63,6 +78,7 @@ local with_const_qz_vertical(q, l, E, Iyy) = with_const_qz(q, l, E, Iyy) + verti
       A: lib.Fx(-q * l / 2),
       B: lib.Fx(-q * l / 2),
     },
+    interpolation: super.interpolation,
   },
 };
 
@@ -78,41 +94,95 @@ local with_linear_qz(q0, q1, l, E, Iyy) = common(l, E, Iyy) + horizontal(l) + {
       A: lib.Phiy((8 * q0 + 7 * q1) * std.pow(l, 3) / (360 * E * Iyy)),
       B: lib.Phiy(-(7 * q0 + 8 * q1) * std.pow(l, 3) / (360 * E * Iyy)),
     },
+    local Av = (2 * q0 + q1) * l / 6,
+    local Bv = (q0 + 2 * q1) * l / 6,
     reaction: {
-      A: lib.Fz((2 * q0 + q1) * l / 6),
-      B: lib.Fz((q0 + 2 * q1) * l / 6),
+      A: lib.Fz(Av),
+      B: lib.Fz(Bv),
+    },
+    interpolation: {
+      local my(x) =
+        local aux(xbar) = xbar / l - std.pow(xbar / l, 3);
+        l * l / 6 * (q0 * aux(l - x) + q1 * aux(x)),
+      local uz(x) =
+        local EI = E * Iyy;
+        local aux(xbar) = (xbar / l - std.pow(xbar / l, 3)) * (7 - 3 * std.pow(xbar / l, 2));
+        std.pow(l, 4) / (360 * EI) * (aux(l - x) * q0 + aux(x) * q1),
+
+      AB: lib.Constant('Nx', 0) +
+          (
+            if q0 == q1 then
+              lib.Linear('Vz', Av, -Bv) +
+              lib.Quadratic('My', eval=lib.Samples(my, 0, l, 10)) +
+              lib.Quartic('Uz', eval=lib.Samples(uz, 0, l, 10))
+            else
+              lib.Quadratic('Vz', eval=[[0, Av], [l, -Bv]]) +
+              lib.Cubic('My', eval=lib.Samples(my, 0, l, 10)) +
+              lib.Quintic('Uz', eval=lib.Samples(uz, 0, l, 10))
+          ),
     },
   },
 };
 
-local with_element_fz(F, x, l, E, Iyy) = common(l, E, Iyy) + horizontal(l) + {
-  name: 'element_fz_%.1f_%.2f' % [F, x],
+local with_element_fz(F, a, l, E, Iyy) = common(l, E, Iyy) + horizontal(l) + {
+  name: 'element_fz_%.1f_%.2f' % [F, a],
 
   neumann: {
-    AB: lib.Fz(F, x),
+    AB: lib.Fz(F, a),
   },
 
   expected: {
     primary: {
-      A: lib.Phiy(F * x * (l - x) * (2 * l - x) / (6 * E * Iyy * l)),
-      B: lib.Phiy(-F * x * (l - x) * (l + x) / (6 * E * Iyy * l)),
+      A: lib.Phiy(F * a * (l - a) * (2 * l - a) / (6 * E * Iyy * l)),
+      B: lib.Phiy(-F * a * (l - a) * (l + a) / (6 * E * Iyy * l)),
     },
+
+    local Av = F * (1 - a / l),
+    local Bv = F * a / l,
+
     reaction: {
-      A: lib.Fz(F * (1 - x / l)),
-      B: lib.Fz(F * x / l),
+      A: lib.Fz(Av),
+      B: lib.Fz(Bv),
+    },
+
+    interpolation: {
+      local b = l - a,
+      local EI = E * Iyy,
+      local leftUz(x) = F * a * b * b / (6 * EI) * (
+        (1 + l / b) * x / l - x * x * x / (a * b * l)
+      ),
+      local rightUz(x) = F * a * a * b / (6 * EI) * (
+        (1 + l / a) * (l - x) / l - std.pow(l - x, 3) / (a * b * l)
+      ),
+
+      AB: lib.Constant('Nx', 0) +
+          (
+            if a == 0 || a == l then
+              lib.Constant('Vz', 0) +
+              lib.Constant('My', 0) +
+              lib.Constant('Uz', 0)
+            else
+              lib.Constant('Vz', Av, range=[0, a]) +
+              lib.Constant('Vz', -Bv, range=[a, l]) +
+              lib.Linear('My', 0, F * a * (1 - a / l), range=[0, a]) +
+              lib.Linear('My', F * a * (1 - a / l), 0, range=[a, l]) +
+              lib.Cubic('Uz', range=[0, a], eval=lib.Samples(leftUz, 0, a, 5)) +
+              lib.Cubic('Uz', range=[a, l], eval=lib.Samples(rightUz, a, l, 5))
+          ),
     },
   },
 };
 
-local with_element_fz_vertical(F, x, l, E, Iyy) = with_element_fz(F, x, l, E, Iyy) + vertical(l) + {
-  name: 'element_fz_%g_%.2f_vertical' % [F, x],
+local with_element_fz_vertical(F, a, l, E, Iyy) = with_element_fz(F, a, l, E, Iyy) + vertical(l) + {
+  name: 'element_fz_%g_%.2f_vertical' % [F, a],
 
   expected: super.expected + {
     primary: super.primary,
     reaction: {
-      A: lib.Fx(-F * (1 - x / l)),
-      B: lib.Fx(-F * x / l),
+      A: lib.Fx(-F * (1 - a / l)),
+      B: lib.Fx(-F * a / l),
     },
+    interpolation: super.interpolation,
   },
 };
 
@@ -157,13 +227,13 @@ local with_all(l, E, Iyy) = common(l, E, Iyy) + horizontal(l) + {
 ]
 +
 [
-  with_element_fz(F=10e3, x=x, l=4, E=10000e6, Iyy=10e-6)
-  for x in [0, 0.25, 2, 3.9, 4]
+  with_element_fz(F=10e3, a=a, l=4, E=10000e6, Iyy=10e-6)
+  for a in [0, 0.25, 2, 3.9, 4]
 ]
 +
 [
-  with_element_fz_vertical(F=10e3, x=x, l=4, E=10000e6, Iyy=10e-6)
-  for x in [0, 0.25, 2, 3.9, 4]
+  with_element_fz_vertical(F=10e3, a=a, l=4, E=10000e6, Iyy=10e-6)
+  for a in [0, 0.25, 2, 3.9, 4]
 ]
 +
 [

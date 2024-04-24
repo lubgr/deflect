@@ -78,27 +78,38 @@ local single_nodal_fx = single + nodal_fx {
     reaction: super.reaction + {
       Z: lib.Fz(250e3),
     },
+    interpolation: {
+      AZ: lib.Constant('Nx', 100e3) +
+          lib.Linear('Ux', 0, 1 / 3 * 1e-3),
+    },
   },
 };
 
 local single_element_fx = single {
   name: 'single_element_fx',
   description: 'Single horizontal truss, concentrated force',
-  local fx = 123e3,
+  local fx = -123e3,
   local a = 0.7655 * l,
 
   neumann: {
-    AZ: lib.Fx(-fx, a),
+    AZ: lib.Fx(fx, a),
   },
 
   expected: {
+    local eps = fx / (30000e6 * 0.01),
+    local deltaU = eps * a,
+
     primary: {
-      local eps = fx / (30000e6 * 0.01),
-      local deltaU = eps * a,
-      Z: lib.Ux(-deltaU),
+      Z: lib.Ux(deltaU),
     },
     reaction: {
-      A: lib.Fx(fx),
+      A: lib.Fx(-fx),
+    },
+    interpolation: {
+      AZ: lib.Constant('Nx', fx, range=[0, a]) +
+          lib.Constant('Nx', 0, range=[a, l]) +
+          lib.Linear('Ux', 0, deltaU, range=[0, a]) +
+          lib.Constant('Ux', deltaU, range=[a, l]),
     },
   },
 };
@@ -116,6 +127,10 @@ local single_const_qx = single {
     reaction: {
       A: lib.Fx(-q * l),
     },
+    interpolation: {
+      AZ: lib.Linear('Nx', q * l, 0) +
+          lib.Quadratic('Ux', eval=[[0, 0], [l, 0.5 * q * l * l / (30000e6 * 0.01)]]),
+    },
   },
 };
 
@@ -130,8 +145,14 @@ local single_linear_qx = single {
   },
 
   expected: {
+    local H = (q0 + q1) * l / 2,
+
     reaction: {
-      A: lib.Fx(-(q0 + q1) * l / 2),
+      A: lib.Fx(-H),
+    },
+    interpolation: {
+      AZ: lib.Quadratic('Nx', eval=[[0, H], [l, 0]]) +
+          lib.Cubic('Ux', eval=[[0, 0]]),
     },
   },
 };
@@ -149,6 +170,15 @@ local multi_const_qx = multi {
   expected: {
     reaction: {
       A: lib.Fx(-q * l),
+    },
+    interpolation: {
+      local ql = q * l,
+      AB: lib.Linear('Nx', ql, 4 / 5 * ql),
+      BC: lib.Linear('Nx', 4 / 5 * ql, 2 / 3 * ql),
+      CD: lib.Linear('Nx', 2 / 3 * ql, ql / 2),
+      DE: lib.Linear('Nx', ql / 2, 2 / 5 * ql),
+      EF: lib.Linear('Nx', 2 / 5 * ql, 1 / 4 * ql),
+      FZ: lib.Linear('Nx', 1 / 4 * ql, 0),
     },
   },
 };
@@ -171,6 +201,16 @@ local multi_linear_qx = multi {
   expected: {
     reaction: {
       A: lib.Fx(-qe * l / 2),
+    },
+    interpolation: {
+      local N(x) = qe * l / 2 - qe / (2 * l) * x * x,
+      local samples(x0, x1, n) = std.map(function(eval) [eval[0] - x0, eval[1]], lib.Samples(N, x0, x1, n)),
+      AB: lib.Quadratic('Nx', eval=samples(0 / 1 * l, 1 / 5 * l, 5)),
+      BC: lib.Quadratic('Nx', eval=samples(1 / 5 * l, 1 / 3 * l, 5)),
+      CD: lib.Quadratic('Nx', eval=samples(1 / 3 * l, 1 / 2 * l, 5)),
+      DE: lib.Quadratic('Nx', eval=samples(1 / 2 * l, 3 / 5 * l, 5)),
+      EF: lib.Quadratic('Nx', eval=samples(3 / 5 * l, 3 / 4 * l, 5)),
+      FZ: lib.Quadratic('Nx', eval=samples(3 / 4 * l, 1 / 1 * l, 5)),
     },
   },
 };
@@ -202,11 +242,22 @@ local multi_ux = multi {
   name: 'multi_ux',
   description: 'Horizontal line, 6 trusses ux prescribed',
 
+  local deltaU = 1 / 3 * 1e-3,
+
   dirichlet: super.dirichlet + {
-    Z: lib.Ux(1 / 3 * 1e-3) + lib.Uz(),
+    Z: lib.Ux(deltaU) + lib.Uz(),
   },
 
   neumann: {},
+
+  expected: {
+    interpolation: {
+      local EA = 0.01 * 30000e6,
+      local eps = deltaU / l,
+      [elmt]: lib.Constant('Nx', eps * EA)
+      for elmt in ['AB', 'BC', 'CD', 'DE', 'EF', 'FZ']
+    },
+  },
 };
 
 [

@@ -41,7 +41,21 @@ local with_axial_hinge(q, F, l) = {
       B: lib.Fz(3 * F),
       C: lib.Fx(q * l),
     },
+    interpolation: {
+      AD: lib.Linear('Nx', -F - q * l, -F) +
+          lib.Constant('Vz', -2 * F) +
+          lib.Linear('My', 0, -2 * F * l),
+      DC: lib.Linear('Nx', 0, q * l) +
+          lib.Constant('Vz', F) +
+          lib.Linear('My', -F * l, 0),
+      DB: lib.Constant('Nx', -3 * F) +
+          lib.Constant('Vz', F) +
+          lib.Linear('My', -F * l, 0),
+    },
   },
 };
 
-with_axial_hinge(2e3, 5e3, 2.5)
+[
+  with_axial_hinge(2e3, 5e3, 2.5),
+  with_axial_hinge(-1e3, -2e3, 0.5),
+]

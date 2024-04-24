@@ -45,6 +45,11 @@ local triangle(angle) = {
       B: lib.Fz(0),
       C: lib.Fz(-F / std.tan(alpha)),
     },
+    interpolation: {
+      AB: lib.Constant('Nx', F),
+      CB: lib.Constant('Nx', 0),
+      AC: lib.Constant('Nx', -F / std.tan(alpha)),
+    },
   },
 };
 

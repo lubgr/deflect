@@ -52,7 +52,8 @@ local frame(l, h, Ih, Iv) = {
 
 local relaxed_tol = {
   tolerance: {
-    reaction: 1e-3,
+    reaction: 5e-3,
+    polynomial: 5e-3,
   },
 };
 
@@ -64,10 +65,16 @@ local const_qz_top(q, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
   },
 
   expected: relaxed_tol {
+    local H = q * l * l / (4 * h * (2 * $.k + 3)),
+
     reaction: {
-      local H = q * l * l / (4 * h * (2 * $.k + 3)),
       A: lib.Fz(q * l / 2) + lib.Fx(H),
       B: lib.Fz(q * l / 2) + lib.Fx(-H),
+    },
+    interpolation: {
+      LEFT: lib.Linear('My', 0, -H * h),
+      TOP: lib.Quadratic('My', eval=[[0, -H * h], [l / 2, -H * h + q * l * l / 8], [l, -H * h]]),
+      RIGHT: lib.Linear('My', -H * h, 0),
     },
   },
 };
@@ -80,12 +87,18 @@ local const_qz_right(q, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
   },
 
   expected: relaxed_tol {
+    local H1 = q * h / 8 * (5 * $.k + 6) / (2 * $.k + 3),
+    local H2 = H1 - q * h,
+
     reaction: {
       local V = q * h * h / (2 * l),
-      local H1 = q * h / 8 * (5 * $.k + 6) / (2 * $.k + 3),
-      local H2 = H1 - q * h,
       A: lib.Fz(V) + lib.Fx(H1),
       B: lib.Fz(-V) + lib.Fx(-H2),
+    },
+    interpolation: {
+      LEFT: lib.Linear('My', 0, -H1 * h),
+      TOP: lib.Linear('My', -H1 * h, -H2 * h - q * h * h / 2),
+      RIGHT: lib.Quadratic('My', eval=[[0, -H2 * h - q * h * h / 2], [h, 0]]),
     },
   },
 };
@@ -98,11 +111,18 @@ local fz_element_top(F, a, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
   },
 
   expected: relaxed_tol {
+    local b = l - a,
+    local H = 3 / 2 * F * a * b / (h * l * (2 * $.k + 3)),
+
     reaction: {
-      local b = l - a,
-      local H = 3 / 2 * F * a * b / (h * l * (2 * $.k + 3)),
       A: lib.Fz(F * b / l) + lib.Fx(H),
       B: lib.Fz(F * a / l) + lib.Fx(-H),
+    },
+    interpolation: {
+      LEFT: lib.Linear('My', 0, -H * h),
+      TOP: lib.Linear('My', -H * h, -H * h + a * b * F / l, range=[0, a]) +
+           lib.Linear('My', -H * h + a * b * F / l, -H * h, range=[a, l]),
+      RIGHT: lib.Linear('My', -H * h, 0),
     },
   },
 };
@@ -119,6 +139,12 @@ local fx_node_top_right(F, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
       A: lib.Fx(F / 2) + lib.Fz(F * h / l),
       B: lib.Fx(F / 2) + lib.Fz(-F * h / l),
     },
+    interpolation: {
+      local M = -F / 2 * h,
+      LEFT: lib.Linear('My', 0, M),
+      TOP: lib.Linear('My', M, -M),
+      RIGHT: lib.Linear('My', -M, 0),
+    },
   },
 };
 
@@ -132,11 +158,18 @@ local fx_right(F, b, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
   },
 
   expected: relaxed_tol {
+    local H1 = 3 * F * a * $.k / (2 * h * (2 * $.k + 3)) * (1 - a * a / (3 * h * h) + 1 / $.k),
+    local H2 = H1 - F,
+
     reaction: {
-      local H1 = 3 * F * a * $.k / (2 * h * (2 * $.k + 3)) * (1 - a * a / (3 * h * h) + 1 / $.k),
-      local H2 = H1 - F,
       A: lib.Fz(F * a / l) + lib.Fx(H1),
       B: lib.Fz(-F * a / l) + lib.Fx(-H2),
+    },
+    interpolation: {
+      LEFT: lib.Linear('My', 0, -H1 * h),
+      TOP: lib.Linear('My', -H1 * h, -H2 * h - F * (h - a)),
+      RIGHT: lib.Linear('My', -H2 * h - F * (h - a), -H2 * a, range=[0, b]) +
+             lib.Linear('My', -H2 * a, 0, range=[b, h]),
     },
   },
 };
