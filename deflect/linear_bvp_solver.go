@@ -2,7 +2,6 @@ package deflect
 
 import (
 	"fmt"
-	"slices"
 
 	"gonum.org/v1/gonum/floats/scalar"
 	"gonum.org/v1/gonum/mat"
@@ -15,7 +14,6 @@ func NewLinearProblemSolver() ProblemSolver {
 
 type linearSolver struct {
 	eqn              matrices
-	d, r             []NodalValue
 	dim, constrained int
 }
 
@@ -32,11 +30,12 @@ func (s *linearSolver) Solve(
 	p *Problem,
 	indices EqLayout,
 	strategy EquationSolver,
-) ([]NodalValue, []NodalValue, error) {
+) (ProblemResult, error) {
 	if err := s.initialise(indices.eqSize(), len(p.Dirichlet)); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
+	// Local typing shortcuts
 	k, r, d, scratch := s.eqn.k, s.eqn.r, s.eqn.d, s.eqn.scratch
 	k11, k12, k22 := s.eqn.k11, s.eqn.k12, s.eqn.k22
 	d1, d2, r1, r2 := s.eqn.d1, s.eqn.d2, s.eqn.r1, s.eqn.r2
@@ -64,7 +63,7 @@ func (s *linearSolver) Solve(
 
 	if err := indices.failure(); err != nil {
 		// Don't attempt to continue if something went wrong so far
-		return nil, nil, fmt.Errorf("failed to assemble global matrices: %w", err)
+		return nil, fmt.Errorf("failed to assemble global matrices: %w", err)
 	}
 
 	s.extractK12()
@@ -80,7 +79,7 @@ func (s *linearSolver) Solve(
 
 	errSolve := strategy.SolveLinearSystem(k22, r2, d2)
 	if errSolve != nil {
-		return nil, nil, fmt.Errorf("failed to solve assembled linear system: %w", errSolve)
+		return nil, fmt.Errorf("failed to solve assembled linear system: %w", errSolve)
 	}
 
 	// Computes reaction forces [r_1] = (-1)·[k_11 d_1 + k_12 d_2] for Dirichlet-constrained dofs:
@@ -96,14 +95,16 @@ func (s *linearSolver) Solve(
 		transform.Post(indices, r, d)
 	}
 
-	// Group primary/secondary solution with symbolic index
-	for i := 0; i < s.dim; i++ {
-		idx := indices.unmap(i)
-		s.d[i] = NodalValue{Index: idx, Value: d.AtVec(i)}
-		s.r[i] = NodalValue{Index: idx, Value: r.AtVec(i)}
-	}
+	err := indices.flushFailure()
 
-	return s.d, s.r, indices.failure()
+	return &solverResult{
+		total:    s.dim,
+		net:      s.dim - s.constrained,
+		d:        s.eqn.d,
+		r:        s.eqn.r,
+		indices:  indices,
+		elements: p.Elements,
+	}, err
 }
 
 func (s *linearSolver) initialise(dim, constrained int) error {
@@ -115,8 +116,6 @@ func (s *linearSolver) initialise(dim, constrained int) error {
 	s.constrained = constrained
 
 	s.eqn = formMatrices(dim, constrained, &s.eqn)
-	s.d = slices.Grow(s.d, dim)[0:dim]
-	s.r = slices.Grow(s.r, dim)[0:dim]
 
 	return nil
 }

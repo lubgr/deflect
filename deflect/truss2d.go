@@ -147,3 +147,81 @@ func (t *truss2d) AddLoad(bc NeumannElementBC) bool {
 
 	return false
 }
+
+func (t *truss2d) Interpolate(indices EqLayout, which Fct, d *mat.VecDense) PolySequence {
+	if which == FctNx {
+		return t.InterpolateNx(indices, d)
+	} else if which != FctUx {
+		return nil
+	}
+
+	// The horizontal displacement is uₓ = ∫ εₓₓ dx = ∫ Nₓ/EA dx. We could also compute this
+	// differently and dispatch over the element loads using manually integrated formulae. This
+	// solution without another load-specific approach seems preferable for now.
+	EA := t.material.YoungsModulus * t.material.Area()
+	ux0, _ := t.startNodeValues(indices, d)
+
+	eps := t.InterpolateNx(indices, d)
+	eps.multiply(1 / EA)
+	ux := eps.integrate(ux0)
+
+	return ux
+}
+
+func (t *truss2d) InterpolateNx(indices EqLayout, d *mat.VecDense) PolySequence {
+	_, nx0 := t.startNodeValues(indices, d)
+	l := length(t.n0, t.n1)
+	result := PolySequence{}
+
+	result = append(result, PolyPiece{X0: 0, XE: l, Coeff: []float64{nx0}})
+
+	for _, bc := range t.loads {
+		// We accepted only Ux loads in AddLoad, so we don't have to inspect the load's kind again
+		loadDispatch(bc,
+			func(load *neumannElementConcentrated) {
+				fx, a := load.value, load.position
+				result = append(result, PolyPiece{X0: a, XE: l, Coeff: []float64{-fx}})
+			},
+			func(load *neumannElementConstant) {
+				qx := load.value
+				result = append(result, PolyPiece{X0: 0, XE: l, Coeff: []float64{0, -qx}})
+			},
+			func(load *neumannElementLinear) {
+				q0, qE := load.first, load.last
+				result = append(
+					result,
+					PolyPiece{X0: 0, XE: l, Coeff: []float64{0, -q0, -(qE - q0) / (2 * l)}},
+				)
+			})
+	}
+
+	return result.flatten()
+}
+
+func (t *truss2d) startNodeValues(indices EqLayout, d *mat.VecDense) (dx0, nx0 float64) {
+	l := length(t.n0, t.n1)
+	s, c := sineCosine2d(t.n0, t.n1)
+
+	kl := t.localNoHingeTangent(l)
+	rl := t.localNoHingeLoads(l)
+
+	idx := t.indicesAsArray()
+	ux0, uz0, ux1, uz1 := indices.mapFour(idx[0], idx[1], idx[2], idx[3])
+
+	d0, d1, d2, d3 := d.AtVec(ux0), d.AtVec(uz0), d.AtVec(ux1), d.AtVec(uz1)
+	dl := mat.NewVecDense(2, []float64{
+		c*d0 + s*d1,
+		c*d2 + s*d3,
+	})
+
+	dx0 = dl.AtVec(0)
+
+	t.hinges.enhance(kl, rl, dl)
+
+	dl.MulVec(kl, dl) // Stores local end forces/stresses now
+	rl.SubVec(rl, dl)
+
+	nx0 = rl.AtVec(0)
+
+	return dx0, nx0
+}

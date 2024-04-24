@@ -10,8 +10,7 @@ import (
 //go:generate go run golang.org/x/tools/cmd/stringer -type=Dof
 type Dof uint8
 
-// Pre-defined degrees of freedom. The sort order prefixes should be treated as implementation
-// details.
+// Pre-defined degrees of freedom.
 const (
 	Ux Dof = iota
 	Uz
@@ -94,6 +93,17 @@ type CrossSection interface {
 // instantiated with a pointer.
 type NeumannElementBC any
 
+// Interpolation associates an element ID with a [Fct] descriptor for the quantity, and a variable
+// number of piecewise polynomials. When there is only one polynomial, it spans the entire element
+// domain (usually from zero to the length of the element). When there is more than one polynomial,
+// there are sub-ranges/intervals. There will not be gaps in between these sub-ranges, and there
+// will only be a single [PolyPiece] instance per sub-range.
+type Interpolation struct {
+	Element   string
+	Quantity  Fct
+	Piecewise PolySequence
+}
+
 // Element defines the common API of any finite element formulation implemented in this package.
 type Element interface {
 	// Assemble adds entries to the given tangent k and residual r, using the current primary nodal
@@ -108,6 +118,12 @@ type Element interface {
 	// RemoveLoad removes the given load. If there are multiple instances of the same load instance,
 	// they are all removed. Removing a load that has previously not been added has no effect.
 	RemoveLoad(bc NeumannElementBC)
+	// Interpolate returns a sequence of piecewise polynomials to describe the primary solution or
+	// stress/internal force in local element coordinates. Post-processing should be performed using
+	// [PolySequence.TrimTrailingZeros] and [PolySequence.CompactIdentical] in that order, using a
+	// context-dependent zero/equality tolerance (that's why it is not performed automatically). If
+	// the element doesn't relate to the given dof, nil is returned.
+	Interpolate(indices EqLayout, which Fct, d *mat.VecDense) PolySequence
 	// Indices adds the indices this element uses (pairing of degree of freedom and nodal id) to set.
 	Indices(set map[Index]struct{})
 	// NumNodes returns the number of nodes this element is connected to.
@@ -151,5 +167,18 @@ type ProblemSolver interface {
 		p *Problem,
 		idx EqLayout,
 		strategy EquationSolver,
-	) (d, r []NodalValue, err error)
+	) (ProblemResult, error)
+}
+
+// ProblemResult is the API to retrieve BVP results as needed. An implementation can choose to
+// evaluate individual results lazily or in batches, whatever makes most sense for the
+// representation of the data.
+type ProblemResult interface {
+	Primary(i Index) (NodalValue, error)
+	Reaction(i Index) (NodalValue, error)
+	PrimaryAll() []NodalValue
+	ReactionAll() []NodalValue
+	Interpolate(elmtID string, quantity Fct, zeroTol float64) (Interpolation, error)
+	InterpolateAll(zeroTol float64) []Interpolation
+	Dimension() (total, net int)
 }

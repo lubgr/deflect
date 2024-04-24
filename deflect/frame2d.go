@@ -46,3 +46,10 @@ func (f *frame2d) Indices(set map[Index]struct{}) {
 func (f *frame2d) AddLoad(bc NeumannElementBC) bool {
 	return f.truss.AddLoad(bc) || f.beam.AddLoad(bc)
 }
+
+func (f *frame2d) Interpolate(indices EqLayout, which Fct, d *mat.VecDense) PolySequence {
+	s0 := f.truss.Interpolate(indices, which, d)
+	s1 := f.beam.Interpolate(indices, which, d)
+
+	return append(s0, s1...)
+}

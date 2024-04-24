@@ -2,6 +2,7 @@ package deflect
 
 import (
 	"fmt"
+	"log"
 	"slices"
 
 	"gonum.org/v1/gonum/floats/scalar"
@@ -37,6 +38,67 @@ func (p *PolyPiece) Eval(x float64) (float64, error) {
 	}
 
 	return y, nil
+}
+
+// derive computes the polynomial's derivative and returns it as a new, independent object. Any
+// constant polynomial (single coefficient in the zero slot, zero or non-zero) will lead to a
+// zero-polynomial. The polynomial domain is copied as is.
+func (p *PolyPiece) derive() PolyPiece {
+	diff := PolyPiece{X0: p.X0, XE: p.XE, Coeff: nil}
+
+	switch len(p.Coeff) {
+	case 0:
+		// Shouldn't happen in practice, but no harm to handle it gracefully with a no-op.
+	case 1:
+		diff.Coeff = []float64{0}
+	default:
+		// For example, with p = 3·x⁵ - 2·x² + x + 5, we have the coefficients
+		//   p.Coeff = {5, 1, -2, 0, 0, 3}
+		//   indices =  0  1   2  3  4  5
+		// The derivative is computed by dropping the first coefficient, shifting everything "to the
+		// left", and multiplying with the exponent:
+		//   d/dx = {1·1, -2·2, 0·3, 0·4, 3·5} = {1, -4, 0, 0, 15}
+		//   indices =													 {0,  1, 2, 3, 4}
+		// which results in 15·x⁴ - 4·x + 1 by
+		diff.Coeff = make([]float64, len(p.Coeff)-1)
+		for j := 1; j < len(p.Coeff); j++ {
+			diff.Coeff[j-1] = float64(j) * p.Coeff[j]
+		}
+	}
+
+	return diff
+}
+
+// integrate does what the name suggests. An integration constant can be passed, which is used such
+// that [PolyPiece.PolyEval] of p at p.X0 is constant. The polynomial domain is left as is. Note
+// that integrating a near-zero constant polynomial, e.g. coefficients are {1e-8}, will result in a
+// linear polynomial. integrate does not attempt to avoid this, but it can make sense to pass the
+// result through [PolySequence.TrimTrailingZeros] after integration to drop the near-zero linear
+// term.
+func (p *PolyPiece) integrate(constant float64) PolyPiece {
+	integrated := PolyPiece{X0: p.X0, XE: p.XE, Coeff: nil}
+
+	// For example, with p = 3·x⁵ - 2·x² + x + 5, we have the coefficients
+	//   p.Coeff = {5, 1, -2, 0, 0, 3}
+	// The integral is computed by shifting everything "to the right", dividing by the incremented
+	// exponent, and inserting the integration constant minus the evaluation of the integrated
+	// function at X0:
+	//   ∫ {5, 1, -2, 0, 0, 3} dx = {constant - ∫...dx | X0, 5/2, 1/3, -2/4, 0, 0, 3/6}.
+	integrated.Coeff = make([]float64, len(p.Coeff)+1)
+
+	for j := 0; j < len(p.Coeff); j++ {
+		integrated.Coeff[j+1] = p.Coeff[j] / float64(j+1)
+	}
+
+	lower, errEval := integrated.Eval(integrated.X0)
+
+	if errEval != nil {
+		log.Printf("Bug: evaluating polynomial at lower boundary must not fail: %v", errEval)
+	}
+
+	integrated.Coeff[0] = constant - lower
+
+	return integrated
 }
 
 // PolySequence is a piecewise polynomial.
@@ -169,6 +231,43 @@ func (ps PolySequence) TrimTrailingZeros(zeroTol float64) {
 
 		if approxZero(ps[i].Coeff[0]) {
 			ps[i].Coeff[0] = 0
+		}
+	}
+}
+
+// integrate uses [PolyPiece.integrate] to integrate individual polynomials. The receiver is
+// unchanged, and the integral is returned as a new object. The sequence of polynomials is expected
+// to have contiguous domains, i.e., gaps and overlaps must not exist between intervals. The
+// integration constant is used for first polynomial in the sequence, all other integration
+// constants are determined by evaluating the precedent polynomial.
+func (ps PolySequence) integrate(constant float64) PolySequence {
+	if len(ps) == 0 {
+		// Shouldn't be relevant in practice, still treat it gracefully.
+		return nil
+	}
+
+	result := make(PolySequence, len(ps))
+	result[0] = ps[0].integrate(constant)
+
+	for i := 1; i < len(ps); i++ {
+		prev, err := result[i-1].Eval(result[i-1].XE)
+
+		if err != nil {
+			log.Printf("Bug: evaluate polynomial at xE must not fail: %v", err)
+		}
+
+		result[i] = ps[i].integrate(prev)
+	}
+
+	return result
+}
+
+// multiply multiplies all polynomial coefficients with factor in place. Factor must not be zero.
+// Polynomial domains are unchanged.
+func (ps PolySequence) multiply(factor float64) {
+	for i := 0; i < len(ps); i++ {
+		for j := 0; j < len(ps[i].Coeff); j++ {
+			ps[i].Coeff[j] *= factor
 		}
 	}
 }

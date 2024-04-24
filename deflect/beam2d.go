@@ -187,6 +187,119 @@ func (b *beam2d) AddLoad(bc NeumannElementBC) bool {
 	return supported && b.oneDimElement.AddLoad(bc)
 }
 
+func (b *beam2d) Interpolate(indices EqLayout, which Fct, d *mat.VecDense) PolySequence {
+	switch which {
+	case FctVz, FctMy, FctPhiy, FctUz:
+	default:
+		return nil
+	}
+
+	// All interpolations are based on My; Vz by differentiation, phiy and uz by integration. Vz,
+	// phiy, and uz don't have to be computed like that, but it seemed like a good strategy; a single
+	// interpolation, My, must be understood and implemented for every possible element loading. Then,
+	// all other interpolations are derived from that.
+	my := b.InterpolateMy(indices, d)
+
+	switch which {
+	case FctMy:
+		return my
+	case FctVz:
+		return transform(func(p PolyPiece) PolyPiece { return p.derive() }, my)
+	}
+
+	// In what follows
+
+	EI := b.material.YoungsModulus * b.material.Iyy()
+	uz0, phiy0, _, _ := b.startNodeValues(indices, d)
+	myOverEI := my // Just a renaming, coefficients are shallow-copied
+	myOverEI.multiply(1 / EI)
+
+	phiy := my.integrate(phiy0)
+	// Given the local co-system, we have d/dx w(x) = -phiy(x). We integrate first without this sign
+	// flip, but since uz0 is already in the local co-system, we need to invert its sign and then
+	// invert the sign of the entire polynomial altogether afterwards.
+	uz := phiy.integrate(-uz0)
+	uz.multiply(-1)
+
+	switch which {
+	case FctPhiy:
+		return phiy
+	case FctUz:
+		return uz
+	}
+
+	return nil
+}
+
+func (b *beam2d) InterpolateMy(indices EqLayout, d *mat.VecDense) PolySequence {
+	_, _, my0, vz0 := b.startNodeValues(indices, d)
+	l := length(b.n0, b.n1)
+	result := PolySequence{PolyPiece{X0: 0, XE: l, Coeff: []float64{my0, vz0}}}
+
+	for _, bc := range b.loads {
+		var p PolyPiece
+
+		loadDispatch(bc,
+			func(load *neumannElementConcentrated) {
+				if load.kind == Uz {
+					fz, a := load.value, load.position
+					p = PolyPiece{X0: a, XE: l, Coeff: []float64{fz * a, -fz}}
+				} else if load.kind == Phiy {
+					my, a := load.value, load.position
+					p = PolyPiece{X0: a, XE: l, Coeff: []float64{-my}}
+				}
+			},
+			func(load *neumannElementConstant) {
+				if load.kind == Uz {
+					q := load.value
+					p = PolyPiece{X0: 0, XE: l, Coeff: []float64{0, 0, -q / 2}}
+				}
+			},
+			func(load *neumannElementLinear) {
+				if load.kind == Uz {
+					q0, qE := load.first, load.last
+					p = PolyPiece{X0: 0, XE: l, Coeff: []float64{0, 0, -0.5 * q0, -(qE - q0) / (6 * l)}}
+				}
+			})
+
+		result = append(result, p)
+	}
+
+	return result.flatten()
+}
+
+func (b *beam2d) startNodeValues(indices EqLayout, d *mat.VecDense) (uz, phiy, my, vz float64) {
+	l := length(b.n0, b.n1)
+	s, c := sineCosine2d(b.n0, b.n1)
+
+	kl := b.localNoHingeTangent(l)
+	rl := b.localNoHingeLoads(l)
+
+	idx := b.indicesAsArray()
+	ux0, uz0, phiy0 := indices.mapThree(idx[0], idx[1], idx[2])
+	ux1, uz1, phiy1 := indices.mapThree(idx[3], idx[4], idx[5])
+
+	d0, d1, d2 := d.AtVec(ux0), d.AtVec(uz0), d.AtVec(phiy0)
+	d3, d4, d5 := d.AtVec(ux1), d.AtVec(uz1), d.AtVec(phiy1)
+	dl := mat.NewVecDense(4, []float64{
+		s*d0 - c*d1,
+		-d2,
+		s*d3 - c*d4,
+		-d5,
+	})
+
+	b.hinges.enhance(kl, rl, dl)
+
+	uz, phiy = dl.AtVec(0), dl.AtVec(1)
+
+	dl.MulVec(kl, dl) // Stores local end forces/stresses now
+	rl.SubVec(rl, dl)
+
+	vz, my = rl.AtVec(0), rl.AtVec(1)
+
+	return
+}
+
 func (b *beam2d) Indices(set map[Index]struct{}) {
 	for _, index := range b.indicesAsArray() {
 		set[index] = struct{}{}
