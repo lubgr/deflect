@@ -22,4 +22,4 @@ git diff --staged | git -C "${dir}" apply --index --allow-empty
 
 pushd ${dir}
 
-pre-commit run --all-files
+pre-commit run $@
