@@ -40,9 +40,9 @@ type expectedInterpolationDescription struct {
 	Eval [][]float64
 }
 
-// ExpectFromJSON parses the given JSON data and constructs expectations that implement testing
-// assertions from it.
-func ExpectFromJSON(data []byte) ([]Expectation, error) {
+// ExpectationsFromJSON parses the given JSON data and constructs expectations that implement
+// testing assertions from it.
+func ExpectationsFromJSON(data []byte) ([]Expectation, error) {
 	var tmp struct {
 		Expected expectedDescription
 	}

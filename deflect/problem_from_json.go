@@ -69,8 +69,8 @@ type elmtDescription struct {
 	Hinges map[string][]string
 }
 
-// FromJSON parses the given JSON data and constructs a boundary value problem from it.
-func FromJSON(data []byte) (Problem, error) {
+// ProblemFromJSON parses the given JSON data and constructs a boundary value problem from it.
+func ProblemFromJSON(data []byte) (Problem, error) {
 	var tmp struct {
 		Nodes        map[string][3]float64
 		Material     map[string]matDescription

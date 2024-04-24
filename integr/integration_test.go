@@ -108,8 +108,8 @@ func extractName(input []byte, file string, t *testing.T) string {
 func runTestCase(input []byte, t *testing.T) {
 	// Parsing is split into two phases. That's not the most efficient way, but it allows a cleaner
 	// separation of concerns. Parsing of expectations happens only in tests anyhow.
-	problem, errProblem := deflect.FromJSON(input)
-	expect, errExpect := ExpectFromJSON(input)
+	problem, errProblem := deflect.ProblemFromJSON(input)
+	expect, errExpect := ExpectationsFromJSON(input)
 
 	if errExpect != nil {
 		t.Fatalf("Failed to build expectations from JSON: %v", errExpect)
