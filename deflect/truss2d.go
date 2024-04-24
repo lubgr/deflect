@@ -121,12 +121,6 @@ func (t *truss2d) indicesAsArray() *[4]Index {
 	return &indices
 }
 
-func (t *truss2d) Indices(set map[Index]struct{}) {
-	for _, index := range t.indicesAsArray() {
-		set[index] = struct{}{}
-	}
-}
-
 func (t *truss2d) AddLoad(bc NeumannElementBC) bool {
 	var kind Dof
 
@@ -224,4 +218,10 @@ func (t *truss2d) startNodeValues(indices EqLayout, d *mat.VecDense) (dx0, nx0 f
 	nx0 = rl.AtVec(0)
 
 	return dx0, nx0
+}
+
+func (t *truss2d) Indices(set map[Index]struct{}) {
+	for _, index := range t.indicesAsArray() {
+		set[index] = struct{}{}
+	}
 }
