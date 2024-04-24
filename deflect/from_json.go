@@ -170,7 +170,10 @@ func translateElements(
 	for id, desc := range from {
 		mat, errLookup := material(desc.Material, desc.CS)
 		if errLookup != nil {
-			err = errors.Join(fmt.Errorf("couldn't lookup material for element %v: %w", id, errLookup))
+			err = errors.Join(
+				err,
+				fmt.Errorf("couldn't lookup material for element %v: %w", id, errLookup),
+			)
 			continue
 		}
 
@@ -201,7 +204,7 @@ func translateElements(
 	}
 
 	if len(elements) == 0 {
-		return elements, errors.New("no elements created")
+		return elements, errors.Join(errors.New("no elements created"), err)
 	}
 
 	return elements, err
