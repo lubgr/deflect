@@ -126,6 +126,12 @@ func (b *beam2d) localNoHingeLoads(l float64) *mat.VecDense {
 					rz1 += fz * a * a * (3 - 2*a)
 					rphiy0 -= fz * a * b * b * l
 					rphiy1 += fz * b * a * a * l
+				} else if load.kind == Phiy {
+					a, b, my := load.position/l, 1.0-load.position/l, load.value
+					rz0 += my * 6 / l * a * b
+					rz1 -= my * 6 / l * a * b
+					rphiy0 -= my * b * (3*a - 1)
+					rphiy1 -= my * a * (3*b - 1)
 				}
 			},
 			func(load *neumannElementConstant) {

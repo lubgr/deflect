@@ -186,30 +186,84 @@ local with_element_fz_vertical(F, a, l, E, Iyy) = with_element_fz(F, a, l, E, Iy
   },
 };
 
+local with_element_my(M, a, l, E, Iyy) = common(l, E, Iyy) + horizontal(l) + {
+  name: 'element_my_%.1f_%.2f' % [M, a],
+
+  neumann: {
+    AB: lib.My(M, a),
+  },
+
+  expected: {
+    local alpha = a / l,
+    local beta = (l - a) / l,
+    local EI = E * Iyy,
+    local leftPhiy = M * (1 - 3 * beta * beta) / (6 * EI / l),
+    local rightPhiy = M * (1 - 3 * alpha * alpha) / (6 * EI / l),
+
+    primary: {
+      A: lib.Phiy(leftPhiy),
+      B: lib.Phiy(rightPhiy),
+    },
+    reaction: {
+      A: lib.Fz(M / l),
+      B: lib.Fz(-M / l),
+    },
+    interpolation: {
+      local leftUz(x) =
+        local xi = x / l;
+        xi * M * l * l / (6 * EI) * (1 - 3 * beta * beta - xi * xi),
+      local rightUz(x) =
+        local xib = (l - x) / l;
+        -xib * M * l * l / (6 * EI) * (1 - 3 * alpha * alpha - xib * xib),
+
+      AB: lib.Constant('Nx', 0) +
+          lib.Constant('Vz', M / l) +
+          (
+            if a == 0 then
+              lib.Linear('My', -M, 0) +
+              lib.Quadratic('Phiy', eval=[[0, -leftPhiy], [l, -rightPhiy]]) +
+              lib.Cubic('Uz', eval=lib.Samples(rightUz, 0, l, 10))
+            else if a == l then
+              lib.Linear('My', 0, M) +
+              lib.Quadratic('Phiy', eval=[[0, -leftPhiy], [l, -rightPhiy]]) +
+              lib.Cubic('Uz', eval=lib.Samples(leftUz, 0, l, 10))
+            else
+              lib.Linear('My', 0, M * a / l, range=[0, a]) +
+              lib.Linear('My', M * (a / l - 1), 0, range=[a, l]) +
+              lib.Quadratic('Phiy', range=[0, a], eval=[[0, -leftPhiy]]) +
+              lib.Quadratic('Phiy', range=[a, l], eval=[[l, -rightPhiy]]) +
+              lib.Cubic('Uz', range=[0, a], eval=lib.Samples(leftUz, 0, a, 5)) +
+              lib.Cubic('Uz', range=[a, l], eval=lib.Samples(rightUz, a, l, 5))
+          ),
+    },
+  },
+};
+
 local with_all(l, E, Iyy) = common(l, E, Iyy) + horizontal(l) + {
   name: 'all_loads_01',
 
   local fconcentrated = with_element_fz(11.5e3, 0.3 * l, l, E, Iyy),
+  local myconcentrated = with_element_my(2.5e3, 0.7 * l, l, E, Iyy),
   local qconst = with_const_qz(1.25e3, l, E, Iyy),
   local qlinear = with_linear_qz(-1.25e3, 1.25e3, l, E, Iyy),
 
   neumann: {
-    AB: fconcentrated.neumann.AB + qconst.neumann.AB + qlinear.neumann.AB,
+    AB: fconcentrated.neumann.AB + myconcentrated.neumann.AB + qconst.neumann.AB + qlinear.neumann.AB,
   },
 
   expected: {
     primary: {
       local phiy(from, node) = from.expected.primary[node][0].Phiy,
       A: lib.Ux(0) + lib.Uz(0) +
-         lib.Phiy(phiy(fconcentrated, 'A') + phiy(qconst, 'A') + phiy(qlinear, 'A')),
+         lib.Phiy(phiy(fconcentrated, 'A') + phiy(myconcentrated, 'A') + phiy(qconst, 'A') + phiy(qlinear, 'A')),
       B: lib.Ux(0) + lib.Uz(0) +
-         lib.Phiy(phiy(fconcentrated, 'B') + phiy(qconst, 'B') + phiy(qlinear, 'B')),
+         lib.Phiy(phiy(fconcentrated, 'B') + phiy(myconcentrated, 'B') + phiy(qconst, 'B') + phiy(qlinear, 'B')),
     },
     reaction: {
       local fz(from, node) = from.expected.reaction[node][0].Fz,
       A: lib.Fx(0) +
-         lib.Fz(fz(fconcentrated, 'A') + fz(qconst, 'A') + fz(qlinear, 'A')),
-      B: lib.Fz(fz(fconcentrated, 'B') + fz(qconst, 'B') + fz(qlinear, 'B')),
+         lib.Fz(fz(fconcentrated, 'A') + fz(myconcentrated, 'A') + fz(qconst, 'A') + fz(qlinear, 'A')),
+      B: lib.Fz(fz(fconcentrated, 'B') + fz(myconcentrated, 'B') + fz(qconst, 'B') + fz(qlinear, 'B')),
     },
   },
 };
@@ -234,6 +288,11 @@ local with_all(l, E, Iyy) = common(l, E, Iyy) + horizontal(l) + {
 [
   with_element_fz_vertical(F=10e3, a=a, l=4, E=10000e6, Iyy=10e-6)
   for a in [0, 0.25, 2, 3.9, 4]
+]
++
+[
+  with_element_my(M=2.5e3, a=a, l=10, E=10000e6, Iyy=10e-6)
+  for a in [0, 10 / 3, 5, 10]
 ]
 +
 [
