@@ -4,10 +4,10 @@ import argparse
 import sys
 import textwrap
 
-from sympy import Symbol, eye, pretty, zeros
+from sympy import Matrix, Symbol, eye, pretty, zeros
 
 
-def show(description, t, k, ksym, r):
+def show(description, t, k, ksym, r, d):
     indent = " " * 4
     print(f"{description}, tangent in global coordinates:\n")
     print(textwrap.indent(pretty(t.T * k * t), indent))
@@ -15,6 +15,9 @@ def show(description, t, k, ksym, r):
     print(textwrap.indent(pretty(t.T * ksym * t), indent))
     print(f"\n{description}, rhs in global coordinates:\n")
     print(textwrap.indent(pretty(t.T * r), indent))
+    print()
+    print(f"\n{description}, d in local coordinates:\n")
+    print(textwrap.indent(pretty(t * d), indent))
     print()
 
 
@@ -45,7 +48,9 @@ def truss2d():
     r[2] = Symbol("r2")
     r[3] = 0
 
-    show("2d truss", t, k, ksym, r)
+    d = Matrix(size, 1, lambda i, j: Symbol(f"d{i}"))
+
+    show("2d truss", t, k, ksym, r, d)
 
 
 def beam2d():
@@ -88,6 +93,8 @@ def beam2d():
     r[4] = Symbol("r4")
     r[5] = Symbol("r5")
 
+    d = Matrix(size, 1, lambda i, j: Symbol(f"d{i}"))
+
     t = eye(size, size)
     t[0, 0] = t[3, 3] = c
     t[0, 1] = t[3, 4] = s
@@ -95,7 +102,7 @@ def beam2d():
     t[1, 1] = t[4, 4] = -c
     t[2, 2] = t[5, 5] = -1
 
-    show("2d beam", t, k, ksym, r)
+    show("2d beam", t, k, ksym, r, d)
 
 
 parser = argparse.ArgumentParser(
