@@ -22,46 +22,46 @@ type EqLayout struct {
 }
 
 // eqSize returns the total size of the system of equations, including Dirichlet-constrained nodes.
-func (il *EqLayout) eqSize() int {
-	return len(il.indices)
+func (el *EqLayout) eqSize() int {
+	return len(el.indices)
 }
 
 // mapOne looks up and returns the mapped-to plain matrix index. Returns zero if isym is not mapped
 // and internally accumulates an error, see [EqLayout.failure] and [EqLayout].
-func (il *EqLayout) mapOne(isym Index) (i int) {
+func (el *EqLayout) mapOne(isym Index) (i int) {
 	var ok bool
-	i, ok = il.indices[isym]
-	il.saveFailure(ok, isym)
+	i, ok = el.indices[isym]
+	el.saveFailure(ok, isym)
 	return i
 }
 
 // mapTwo is identical to [mapOne], but with two lookups.
-func (il *EqLayout) mapTwo(isym, jsym Index) (i, j int) {
-	return il.mapOne(isym), il.mapOne(jsym)
+func (el *EqLayout) mapTwo(isym, jsym Index) (i, j int) {
+	return el.mapOne(isym), el.mapOne(jsym)
 }
 
 // mapThree is identical to [mapOne], but with three lookups.
-func (il *EqLayout) mapThree(isym, jsym, ksym Index) (i, j, k int) {
-	return il.mapOne(isym), il.mapOne(jsym), il.mapOne(ksym)
+func (el *EqLayout) mapThree(isym, jsym, ksym Index) (i, j, k int) {
+	return el.mapOne(isym), el.mapOne(jsym), el.mapOne(ksym)
 }
 
 // mapFour is identical to [mapOne], but with four lookups.
-func (il *EqLayout) mapFour(isym, jsym, ksym, lsym Index) (i, j, k, l int) {
-	return il.mapOne(isym), il.mapOne(jsym), il.mapOne(ksym), il.mapOne(lsym)
+func (el *EqLayout) mapFour(isym, jsym, ksym, lsym Index) (i, j, k, l int) {
+	return el.mapOne(isym), el.mapOne(jsym), el.mapOne(ksym), el.mapOne(lsym)
 }
 
 // unmap looks up the reverse mapping, but does not implement any error handling - i must have been
 // retrieved by lookup functions like [mapOne] beforehand.
-func (il *EqLayout) unmap(i int) (isym Index) {
-	return il.inverse[i]
+func (el *EqLayout) unmap(i int) (isym Index) {
+	return el.inverse[i]
 }
 
-func (il *EqLayout) saveFailure(ok bool, symbolic Index) {
+func (el *EqLayout) saveFailure(ok bool, symbolic Index) {
 	if !ok {
-		il.failures++
+		el.failures++
 
-		if len(il.failed) < 5 {
-			il.failed = append(il.failed, fmt.Sprintf("%v/%v", symbolic.NodalID, symbolic.Dof))
+		if len(el.failed) < 5 {
+			el.failed = append(el.failed, fmt.Sprintf("%v/%v", symbolic.NodalID, symbolic.Dof))
 		}
 	}
 }
@@ -69,27 +69,27 @@ func (il *EqLayout) saveFailure(ok bool, symbolic Index) {
 // failure returns a non-nil error if any of the preceding lookup operations failed. The internal
 // error state is _not_ flushed. In order to clear the error too, use [EqLayout.flushFailure]
 // instead.
-func (il *EqLayout) failure() error {
-	if il.failures == 0 {
+func (el *EqLayout) failure() error {
+	if el.failures == 0 {
 		return nil
 	}
 
-	list := strings.Join(il.failed, ", ")
+	list := strings.Join(el.failed, ", ")
 
-	if il.failures > len(il.failed) {
+	if el.failures > len(el.failed) {
 		list += ", ..."
 	}
 
-	return fmt.Errorf("%v index lookup failure(s) (%v)", il.failures, list)
+	return fmt.Errorf("%v index lookup failure(s) (%v)", el.failures, list)
 }
 
 // flushFailure is equivalent to [failure], but also clears the error so that subsequent calls to
 // [failure] or [flushFailure] without previous erroneous lookups return nil.
-func (il *EqLayout) flushFailure() error {
-	failure := il.failure()
+func (el *EqLayout) flushFailure() error {
+	failure := el.failure()
 
-	il.failures = 0
-	il.failed = nil
+	el.failures = 0
+	el.failed = nil
 
 	return failure
 }
