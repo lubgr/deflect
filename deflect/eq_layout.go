@@ -67,8 +67,8 @@ func (il *EqLayout) saveFailure(ok bool, symbolic Index) {
 }
 
 // failure returns a non-nil error if any of the preceding lookup operations failed. The internal
-// error state is _not_ flushed. In order to clear the error, a new EqLayout instance must be
-// instantiated.
+// error state is _not_ flushed. In order to clear the error too, use [EqLayout.flushFailure]
+// instead.
 func (il *EqLayout) failure() error {
 	if il.failures == 0 {
 		return nil
@@ -81,7 +81,17 @@ func (il *EqLayout) failure() error {
 	}
 
 	return fmt.Errorf("%v index lookup failure(s) (%v)", il.failures, list)
+}
 
+// flushFailure is equivalent to [failure], but also clears the error so that subsequent calls to
+// [failure] or [flushFailure] without previous erroneous lookups return nil.
+func (il *EqLayout) flushFailure() error {
+	failure := il.failure()
+
+	il.failures = 0
+	il.failed = nil
+
+	return failure
 }
 
 // NewEqLayout creates a new index layout for the given boundary value problem.

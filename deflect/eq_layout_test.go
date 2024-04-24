@@ -65,6 +65,30 @@ func TestEqLayoutLookup(t *testing.T) {
 	}
 }
 
+func TestEqLayoutFlushFailure(t *testing.T) {
+	layout := newEqLayoutDirect(map[Index]int{
+		Index{NodalID: "A", Dof: Ux}: 0,
+		Index{NodalID: "C", Dof: Uy}: 1,
+	})
+
+	// All these don't exist in the mapping:
+	layout.mapOne(Index{NodalID: "X", Dof: Ux})
+	layout.mapOne(Index{NodalID: "Y", Dof: Ux})
+	layout.mapOne(Index{NodalID: "Z", Dof: Ux})
+
+	if layout.failure() == nil {
+		t.Errorf("Expected an error after looking up non-existing indices, got <nil>")
+	}
+
+	if layout.flushFailure() == nil {
+		t.Errorf("Expected an error after looking up non-existing indices, got <nil>")
+	}
+
+	if err := layout.failure(); err != nil {
+		t.Errorf("Error after flushing should be <nil>, got: %v", err)
+	}
+}
+
 func TestIndexMapCreationWithoutOverlap(t *testing.T) {
 	aux := Index{NodalID: "A", Dof: Ux}
 	buz := Index{NodalID: "B", Dof: Uz}
