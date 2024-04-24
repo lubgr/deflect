@@ -21,6 +21,29 @@ const (
 	Phix
 )
 
+// Fct denotes a function to be interpolated on the element level. These can be primary solution
+// variables (nodal values) as well as stresses/internal forces.
+//
+//go:generate go run golang.org/x/tools/cmd/stringer -type=Fct -trimprefix Fct
+type Fct uint8
+
+// Pre-defined functions of interest that can be interpolated.
+const (
+	FctUnknown Fct = iota
+	FctUx
+	FctUz
+	FctUy
+	FctPhiy
+	FctPhiz
+	FctPhix
+	FctNx
+	FctVz
+	FctVy
+	FctMy
+	FctMz
+	FctMx
+)
+
 // Node describes a mesh vertex by 3-dimensional coordinates and an identifier. Coordinates are
 // always in meters.
 type Node struct {
