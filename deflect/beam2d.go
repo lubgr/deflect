@@ -115,41 +115,43 @@ func (b *beam2d) localNoHingeTangent(l float64) *mat.SymDense {
 }
 
 func (b *beam2d) localNoHingeLoads(l float64) *mat.VecDense {
-	var rx0, rphiy0, rx1, rphiy1 float64
+	var rz0, rphiy0, rz1, rphiy1 float64
 
 	for _, bc := range b.loads {
-		switch load := bc.(type) {
-		case *neumannElementConcentrated:
-			if load.kind == Uz {
-				a, b, fz := load.position/l, 1.0-load.position/l, load.value
-				rx0 += fz * b * b * (3 - 2*b)
-				rx1 += fz * a * a * (3 - 2*a)
-				rphiy0 -= fz * a * b * b * l
-				rphiy1 += fz * b * a * a * l
-			}
-		case *neumannElementConstant:
-			if load.kind == Uz {
-				q := load.value
-				rx0 += q * l / 2
-				rx1 += q * l / 2
-				rphiy0 -= q * l * l / 12
-				rphiy1 += q * l * l / 12
-			}
-		case *neumannElementLinear:
-			if load.kind == Uz {
-				q0, q1 := load.first, load.last
-				rx0 += (7*q0 + 3*q1) * l / 20
-				rx1 += (3*q0 + 7*q1) * l / 20
-				rphiy0 -= (3*q0 + 2*q1) * l * l / 60
-				rphiy1 += (2*q0 + 3*q1) * l * l / 60
-			}
-		}
+		loadDispatch(bc,
+			func(load *neumannElementConcentrated) {
+				if load.kind == Uz {
+					a, b, fz := load.position/l, 1.0-load.position/l, load.value
+					rz0 += fz * b * b * (3 - 2*b)
+					rz1 += fz * a * a * (3 - 2*a)
+					rphiy0 -= fz * a * b * b * l
+					rphiy1 += fz * b * a * a * l
+				}
+			},
+			func(load *neumannElementConstant) {
+				if load.kind == Uz {
+					q := load.value
+					rz0 += q * l / 2
+					rz1 += q * l / 2
+					rphiy0 -= q * l * l / 12
+					rphiy1 += q * l * l / 12
+				}
+			},
+			func(load *neumannElementLinear) {
+				if load.kind == Uz {
+					q0, q1 := load.first, load.last
+					rz0 += (7*q0 + 3*q1) * l / 20
+					rz1 += (3*q0 + 7*q1) * l / 20
+					rphiy0 -= (3*q0 + 2*q1) * l * l / 60
+					rphiy1 += (2*q0 + 3*q1) * l * l / 60
+				}
+			})
 	}
 
 	r := mat.NewVecDense(4, nil)
-	r.SetVec(0, rx0)
+	r.SetVec(0, rz0)
 	r.SetVec(1, rphiy0)
-	r.SetVec(2, rx1)
+	r.SetVec(2, rz1)
 	r.SetVec(3, rphiy1)
 
 	return r
@@ -169,16 +171,12 @@ func (b *beam2d) indicesAsArray() *[6]Index {
 }
 
 func (b *beam2d) AddLoad(bc NeumannElementBC) bool {
-	var supported bool
+	supported := false
 
-	switch load := bc.(type) {
-	case *neumannElementConcentrated:
-		supported = load.kind == Uz || load.kind == Phiy
-	case *neumannElementConstant:
-		supported = load.kind == Uz
-	case *neumannElementLinear:
-		supported = load.kind == Uz
-	}
+	loadDispatch(bc,
+		func(l *neumannElementConcentrated) { supported = l.kind == Uz || l.kind == Phiy },
+		func(l *neumannElementConstant) { supported = l.kind == Uz },
+		func(l *neumannElementLinear) { supported = l.kind == Uz })
 
 	return supported && b.oneDimElement.AddLoad(bc)
 }

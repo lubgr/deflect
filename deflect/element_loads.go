@@ -38,3 +38,33 @@ type neumannElementLinear struct {
 func NewElementLinearLoad(kind Dof, first, last float64) NeumannElementBC {
 	return &neumannElementLinear{kind: kind, first: first, last: last}
 }
+
+// loadDispatch implements an exhaustive type switch over all NeumannElementBC types and calls the
+// corresponding callback. This API shall be used instead of spreading identical type switches where
+// needed. It gives us one single place to change when a new element load type is added/removed, and
+// call sites can't be missed due to compiler errors. Therefore, we accept that this function
+// signature is ugly and might even grow over time. The callbacks are expected to have side effects
+// in their closure state.
+//
+// Implementation note: the following other options were considered and discarded.
+// - New interface type with one method per element load type. This seems hideously verbose, in
+// particular for scenarios with very little logic per load type.
+// - Custom linter that inspects all type switches over NeumannElementBC. Seems more complicated
+// than this approach.
+// - Distinct struct with callback fields. This has no exhaustiveness guarantee at compile time,
+// since it still allows default initialisation of callbacks, which are then unusable at runtime.
+func loadDispatch(
+	bc NeumannElementBC,
+	concentrated func(*neumannElementConcentrated),
+	constant func(*neumannElementConstant),
+	linear func(*neumannElementLinear),
+) {
+	switch load := bc.(type) {
+	case *neumannElementConcentrated:
+		concentrated(load)
+	case *neumannElementConstant:
+		constant(load)
+	case *neumannElementLinear:
+		linear(load)
+	}
+}

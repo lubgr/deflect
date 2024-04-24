@@ -85,20 +85,22 @@ func (t *truss2d) localNoHingeLoads(l float64) *mat.VecDense {
 	var rx0, rx1 float64
 
 	for _, bc := range t.loads {
-		switch load := bc.(type) {
-		case *neumannElementConcentrated:
-			a, b, fx := load.position, l-load.position, load.value
-			rx0 += fx * b / l
-			rx1 += fx * a / l
-		case *neumannElementConstant:
-			q := load.value
-			rx0 += q * l / 2
-			rx1 += q * l / 2
-		case *neumannElementLinear:
-			q0, q1 := load.first, load.last
-			rx0 += l * (2*q0 + q1) / 6.0
-			rx1 += l * (q0 + 2*q1) / 6.0
-		}
+		loadDispatch(bc,
+			func(load *neumannElementConcentrated) {
+				a, b, fx := load.position, l-load.position, load.value
+				rx0 += fx * b / l
+				rx1 += fx * a / l
+			},
+			func(load *neumannElementConstant) {
+				q := load.value
+				rx0 += q * l / 2
+				rx1 += q * l / 2
+			},
+			func(load *neumannElementLinear) {
+				q0, q1 := load.first, load.last
+				rx0 += l * (2*q0 + q1) / 6.0
+				rx1 += l * (q0 + 2*q1) / 6.0
+			})
 	}
 
 	r := mat.NewVecDense(2, nil)
@@ -128,14 +130,16 @@ func (t *truss2d) Indices(set map[Index]struct{}) {
 func (t *truss2d) AddLoad(bc NeumannElementBC) bool {
 	var kind Dof
 
-	switch load := bc.(type) {
-	case *neumannElementConcentrated:
-		kind = load.kind
-	case *neumannElementConstant:
-		kind = load.kind
-	case *neumannElementLinear:
-		kind = load.kind
-	}
+	loadDispatch(bc,
+		func(load *neumannElementConcentrated) {
+			kind = load.kind
+		},
+		func(load *neumannElementConstant) {
+			kind = load.kind
+		},
+		func(load *neumannElementLinear) {
+			kind = load.kind
+		})
 
 	if kind == Ux {
 		return t.oneDimElement.AddLoad(bc)
