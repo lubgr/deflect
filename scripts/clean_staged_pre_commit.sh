@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 #
 # This script encapsulates a pre-commit run with staged changes but without untracked files. This
 # solves an issue where untracked files cause the pre-commit run to yield false positive or false
