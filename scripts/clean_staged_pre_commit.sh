@@ -13,13 +13,13 @@
 set -x
 set -e
 
-dir=`mktemp -d`
+dir=$(mktemp -d)
 
-trap "rm -rf ${dir}" EXIT
+trap 'rm -rf ${dir}' EXIT
 
 git clone . "${dir}"
 git diff --staged | git -C "${dir}" apply --index --allow-empty
 
-pushd ${dir}
+cd "${dir}"
 
-pre-commit run $@
+pre-commit run "$@"
