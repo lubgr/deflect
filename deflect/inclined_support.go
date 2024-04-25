@@ -47,7 +47,7 @@ func (l *inclinedSupport) Pre(indices EqLayout, k *mat.SymDense, r, d *mat.VecDe
 }
 
 func (l *inclinedSupport) Post(indices EqLayout, r, d *mat.VecDense) {
-	// No need to check for the initialisation of l's bufffers, since l.Pre must have been called
+	// No need to check for the initialisation of l's buffers, since l.Pre must have been called
 	// before l.Post, and l.Pre would initialise them.
 	i, j := indices.mapTwo(l.from, l.to)
 
