@@ -29,5 +29,5 @@ wasm:
 
 .PHONY: coverage
 coverage:
-	go test -coverprofile=/tmp/coverage.out ./...
+	go test -v -coverpkg=./... -coverprofile=/tmp/coverage.out ./...
 	go tool cover -html=/tmp/coverage.out
