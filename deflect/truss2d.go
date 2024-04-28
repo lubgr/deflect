@@ -143,27 +143,36 @@ func (t *truss2d) AddLoad(bc NeumannElementBC) bool {
 }
 
 func (t *truss2d) Interpolate(indices EqLayout, which Fct, d *mat.VecDense) PolySequence {
-	if which == FctNx {
-		return t.InterpolateNx(indices, d)
-	} else if which != FctUx {
+	switch which {
+	case FctUx, FctNx:
+	default:
 		return nil
+	}
+
+	ux0, nx0 := t.startNodeValues(indices, d)
+	return t.InterpolateNxOrUx(which, ux0, nx0)
+}
+
+func (t *truss2d) InterpolateNxOrUx(which Fct, ux0, nx0 float64) PolySequence {
+	nx := t.InterpolateNx(nx0)
+
+	if which == FctNx {
+		return nx
 	}
 
 	// The horizontal displacement is uₓ = ∫ εₓₓ dx = ∫ Nₓ/EA dx. We could also compute this
 	// differently and dispatch over the element loads using manually integrated formulae. This
 	// solution without another load-specific approach seems preferable for now.
 	EA := t.material.YoungsModulus * t.material.Area()
-	ux0, _ := t.startNodeValues(indices, d)
 
-	eps := t.InterpolateNx(indices, d)
+	eps := nx // Mostly a shallow copy, treat as a rename
 	eps.multiply(1 / EA)
 	ux := eps.integrate(ux0)
 
 	return ux
 }
 
-func (t *truss2d) InterpolateNx(indices EqLayout, d *mat.VecDense) PolySequence {
-	_, nx0 := t.startNodeValues(indices, d)
+func (t *truss2d) InterpolateNx(nx0 float64) PolySequence {
 	l := length(t.n0, t.n1)
 	result := PolySequence{}
 
