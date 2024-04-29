@@ -16,6 +16,8 @@ repos:
         fail_fast: true
       - id: test
         args: [-parallel, '8', ./...]
+        types: []
+        types_or: [go, jsonnet]
       - id: vet
       - id: mod-tidy
       - id: staticcheck
