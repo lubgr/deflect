@@ -1,6 +1,7 @@
 package integr
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -43,28 +44,47 @@ type expectedInterpolationDescription struct {
 // ExpectationsFromJSON parses the given JSON data and constructs expectations that implement
 // testing assertions from it.
 func ExpectationsFromJSON(data []byte) ([]Expectation, error) {
-	var tmp struct {
-		Expected expectedDescription
-	}
+	var tmp struct{ Expected json.RawMessage }
 
+	// We first extract the "expected" part, using standard Unmarshal. This ignores fields that the
+	// struct to be populated doesn't care about. We don't actually decode anything though, but rather
+	// store the bytes, so that later...
 	if err := json.Unmarshal(data, &tmp); err != nil {
-		return nil, fmt.Errorf("couldn't build expectations from JSON: %w", err)
+		return nil, fmt.Errorf("top-level 'expected' JSON: %w", err)
+	} else if len(tmp.Expected) == 0 {
+		return nil, errors.New("must have an 'expected' object, found none")
 	}
 
+	// ... we can decode the expectations using stricter decoder options. This makes it harder to
+	// accidentally specify expectations with a typo, which would otherwise go unnoticed and a test
+	// might pass as a false negative just because an expectation was parsed under an ignored name.
+	decoder := json.NewDecoder(bytes.NewReader(tmp.Expected))
+	decoder.DisallowUnknownFields()
+
+	var expect expectedDescription
+
+	if err := decoder.Decode(&expect); err != nil {
+		return nil, fmt.Errorf("decoding test expectations: %w", err)
+	}
+
+	return expectationsFromDescriptions(expect)
+}
+
+func expectationsFromDescriptions(expect expectedDescription) ([]Expectation, error) {
 	var result []Expectation
 
-	if tmp.Expected.Failure == nil {
+	if expect.Failure == nil {
 		result = append(result, &noFailureExpectation{})
-	} else if pattern, err := regexp.Compile(*tmp.Expected.Failure); err != nil {
-		return result, fmt.Errorf("couldn't compile '%v' to regexp", *tmp.Expected.Failure)
+	} else if pattern, err := regexp.Compile(*expect.Failure); err != nil {
+		return result, fmt.Errorf("couldn't compile '%v' to regexp", *expect.Failure)
 	} else {
 		result = append(result, &regexFailureExpectation{pattern: pattern})
 	}
 
-	nodal := newNodalExpectation(tmp.Expected.Tolerance.Primary, tmp.Expected.Tolerance.Reaction)
+	nodal := newNodalExpectation(expect.Tolerance.Primary, expect.Tolerance.Reaction)
 	var errPrimary, errReact error
-	nodal.primary, errPrimary = translateToNodalExpectations(tmp.Expected.Primary)
-	nodal.reactions, errReact = translateToNodalExpectations(tmp.Expected.Reaction)
+	nodal.primary, errPrimary = translateToNodalExpectations(expect.Primary)
+	nodal.reactions, errReact = translateToNodalExpectations(expect.Reaction)
 
 	if err := errors.Join(errPrimary, errReact); err != nil {
 		return nil, fmt.Errorf("failed to build nodal expectations: %w", err)
@@ -73,8 +93,8 @@ func ExpectationsFromJSON(data []byte) ([]Expectation, error) {
 	}
 
 	interpolation, err := translateInterpolations(
-		tmp.Expected.Interpolation,
-		tmp.Expected.Tolerance.Polynomial,
+		expect.Interpolation,
+		expect.Tolerance.Polynomial,
 	)
 
 	if err != nil {

@@ -112,7 +112,7 @@ func runTestCase(input []byte, t *testing.T) {
 	expect, errExpect := ExpectationsFromJSON(input)
 
 	if errExpect != nil {
-		t.Fatalf("Failed to build expectations from JSON: %v", errExpect)
+		t.Fatalf("Failed to build test from JSON: %v", errExpect)
 	}
 
 	if errProblem != nil {
