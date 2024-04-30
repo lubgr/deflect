@@ -217,9 +217,9 @@ func (t *truss2d) startNodeValues(indices EqLayout, d *mat.VecDense) (dx0, nx0 f
 		c*d2 + s*d3,
 	})
 
-	dx0 = dl.AtVec(0)
-
 	t.hinges.enhance(kl, rl, dl)
+
+	dx0 = dl.AtVec(0)
 
 	dl.MulVec(kl, dl) // Stores local end forces/stresses now
 	rl.SubVec(rl, dl)
