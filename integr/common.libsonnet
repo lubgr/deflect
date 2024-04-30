@@ -98,23 +98,20 @@
 
   Defaults(material='default', cs='default')::
     {
-      local common = {
+      local element(nodes, hinges, kind) = {
+        kind: kind,
         material: material,
         cs: cs,
+        [if std.length(nodes) > 0 then 'nodes']: nodes,
+        [if std.length(hinges) > 0 then 'hinges']: hinges,
       },
 
       Truss2d(nodes=[], hinges={})::
-        common {
-          kind: 'truss2d',
-          [if std.length(nodes) > 0 then 'nodes']: nodes,
-          [if std.length(hinges) > 0 then 'hinges']: hinges,
-        },
+        element(nodes, hinges, 'truss2d'),
+      Truss3d(nodes=[], hinges={})::
+        element(nodes, hinges, 'truss3d'),
       Frame2d(nodes=[], hinges={})::
-        common {
-          kind: 'frame2d',
-          [if std.length(nodes) > 0 then 'nodes']: nodes,
-          [if std.length(hinges) > 0 then 'hinges']: hinges,
-        },
+        element(nodes, hinges, 'frame2d'),
     },
 
   local allowedPolynomials = ['Ux', 'Uz', 'Uy', 'Phiy', 'Phiz', 'Phix', 'Nx', 'Vz', 'Vy', 'My', 'Mz', 'Mx'],
