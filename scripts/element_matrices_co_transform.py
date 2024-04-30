@@ -4,7 +4,7 @@ import argparse
 import sys
 import textwrap
 
-from sympy import Matrix, Symbol, eye, pretty, zeros
+from sympy import Matrix, Symbol, eye, pretty, symbols, zeros
 
 
 def show(description, t, k, ksym, r, d):
@@ -21,10 +21,28 @@ def show(description, t, k, ksym, r, d):
     print()
 
 
+def truss3d():
+    EA, l, cx, cy, cz = symbols("EA l cx cy cz")
+
+    k = zeros(2, 2)
+    k[0, 0] = k[1, 1] = EA / l
+    k[0, 1] = k[1, 0] = -EA / l
+
+    t = zeros(2, 6)
+    t[0, 0] = t[1, 3] = cx
+    t[0, 1] = t[1, 4] = cy
+    t[0, 2] = t[1, 5] = cz
+
+    ksym = Matrix(2, 2, lambda i, j: Symbol(f"k{i}{j}"))
+    r = Matrix(2, 1, lambda i, _: Symbol(f"r{i}"))
+    d = Matrix(6, 1, lambda i, _: Symbol(f"d{i}"))
+
+    show("3d truss", t, k, ksym, r, d)
+
+
 def truss2d():
+    EA, l, c, s = symbols("EA l c s")
     size = 4
-    c, s = Symbol("c"), Symbol("s")
-    EA, l = Symbol("EA"), Symbol("l")
 
     k = zeros(size, size)
     k[0, 0] = k[2, 2] = EA / l
@@ -48,19 +66,17 @@ def truss2d():
     r[2] = Symbol("r2")
     r[3] = 0
 
-    d = Matrix(size, 1, lambda i, j: Symbol(f"d{i}"))
+    d = Matrix(size, 1, lambda i, _: Symbol(f"d{i}"))
 
     show("2d truss", t, k, ksym, r, d)
 
 
 def beam2d():
     size = 6
-    c, s = Symbol("c"), Symbol("s")
-    EI, l = Symbol("EI"), Symbol("l")
+    EI, l, c, s = symbols("EI l c s")
     l2, l3 = l * l, l * l * l
 
     k = zeros(size, size)
-
     k[1, 1] = 12 * EI / l3
     k[1, 2] = k[2, 1] = -6 * EI / l2
     k[1, 4] = k[4, 1] = -12 * EI / l3
@@ -73,7 +89,6 @@ def beam2d():
     k[5, 5] = 4 * EI / l
 
     ksym = zeros(size, size)
-
     ksym[1, 1] = Symbol("k00")
     ksym[1, 2] = ksym[2, 1] = Symbol("k01")
     ksym[1, 4] = ksym[4, 1] = Symbol("k02")
@@ -93,7 +108,7 @@ def beam2d():
     r[4] = Symbol("r4")
     r[5] = Symbol("r5")
 
-    d = Matrix(size, 1, lambda i, j: Symbol(f"d{i}"))
+    d = Matrix(size, 1, lambda i, _: Symbol(f"d{i}"))
 
     t = eye(size, size)
     t[0, 0] = t[3, 3] = c
@@ -116,7 +131,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "--element",
     type=str,
-    choices=["beam2d", "truss2d"],
+    choices=["beam2d", "truss2d", "truss3d"],
     required=True,
     help="Show results for this element type",
 )
