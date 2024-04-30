@@ -1,6 +1,6 @@
 default_language_version:
     python: python3.12
-    golang: 1.22.0
+    golang: 1.22.2
 
 repos:
   - repo: https://github.com/segmentio/golines

@@ -1,6 +1,6 @@
 module github.com/lubgr/deflect
 
-go 1.22.0
+go 1.22.2
 
 require (
 	github.com/google/go-jsonnet v0.20.0
