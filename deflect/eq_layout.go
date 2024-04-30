@@ -2,6 +2,7 @@ package deflect
 
 import (
 	"cmp"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -105,8 +106,9 @@ func newEqLayoutDirect(indices map[Index]int) EqLayout {
 	return EqLayout{indices: indices, inverse: invertIndexMap(indices)}
 }
 
-// IndexMap constructs the mapping from symbolic to plain matrix indices. It returns an error when
-// there are duplicate Dirichlet indices.
+// IndexMap constructs the mapping from symbolic to plain matrix indices. It returns an
+// error when there are duplicate Dirichlet indices, or when there are Dirichlet BCs for
+// indices that no element refers to.
 func createIndexMap(elements []Element, dirichlet []NodalValue) (map[Index]int, error) {
 	indices := map[Index]struct{}{}
 	constrained := map[Index]struct{}{}
@@ -127,6 +129,12 @@ func createIndexMap(elements []Element, dirichlet []NodalValue) (map[Index]int, 
 
 	if len(duplicates) > 0 {
 		err = fmt.Errorf("duplicate Dirichlet BCs %v", strings.Join(duplicates, ", "))
+	}
+
+	for idx := range constrained {
+		if _, found := indices[idx]; !found {
+			err = errors.Join(err, fmt.Errorf("unconnected Dirichlet BC on %v/%v", idx.NodalID, idx.Dof))
+		}
 	}
 
 	return freeAndConstraintsToIndices(indices, constrained), err
