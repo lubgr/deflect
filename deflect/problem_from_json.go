@@ -253,7 +253,7 @@ func determineNodes(
 func scanForNode(nodeID string, nodes []Node) (*Node, error) {
 	idx := slices.IndexFunc(nodes, func(n Node) bool { return n.ID == nodeID })
 	if idx == -1 {
-		return nil, fmt.Errorf("nodal ID '%v' not found in sequence of %v nodes", nodeID, len(nodes))
+		return nil, fmt.Errorf("nodal ID '%v' not found in %v nodes", nodeID, len(nodes))
 	}
 	return &nodes[idx], nil
 }
