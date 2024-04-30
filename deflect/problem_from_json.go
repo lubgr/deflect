@@ -143,20 +143,34 @@ func matLookupFct(
 ) func(string, string) (Material, error) {
 	return func(mat, cs string) (Material, error) {
 		result := Material{}
-		var okMat, okCS bool
+		var errMat, errCS error
 
-		result.LinearElastic, okMat = mats[mat]
-		result.CrossSection, okCS = css[cs]
+		result.LinearElastic, errMat = lookupAllowEmptyOnSingle(mats, mat, "material")
+		result.CrossSection, errCS = lookupAllowEmptyOnSingle(css, cs, "crosssection")
 
-		if !okMat {
-			return result, fmt.Errorf("material '%v' not found", mat)
-		}
-		if !okCS {
-			return result, fmt.Errorf("cross section '%v' not found", cs)
-		}
-
-		return result, nil
+		return result, errors.Join(errMat, errCS)
 	}
+}
+
+func lookupAllowEmptyOnSingle[V any](data map[string]V, key, desc string) (V, error) {
+	switch {
+	case key == "" && len(data) != 1:
+		return *new(V), fmt.Errorf(
+			"empty descriptor requires exactly one %v entry, got %v",
+			desc,
+			len(data),
+		)
+	case key == "":
+		for _, value := range data {
+			return value, nil
+		}
+	}
+
+	value, ok := data[key]
+	if !ok {
+		return value, fmt.Errorf("%v '%v' not found", desc, key)
+	}
+	return value, nil
 }
 
 func translateElements(
