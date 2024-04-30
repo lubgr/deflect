@@ -119,7 +119,7 @@ func (b *beam2d) localNoHingeLoads(l float64) *mat.VecDense {
 
 	for _, bc := range b.loads {
 		loadDispatch(bc,
-			func(load *neumannElementConcentrated) {
+			func(load *neumannConcentrated) {
 				if load.kind == Uz {
 					a, b, fz := load.position/l, 1.0-load.position/l, load.value
 					rz0 += fz * b * b * (3 - 2*b)
@@ -134,7 +134,7 @@ func (b *beam2d) localNoHingeLoads(l float64) *mat.VecDense {
 					rphiy1 -= my * a * (3*b - 1)
 				}
 			},
-			func(load *neumannElementConstant) {
+			func(load *neumannConstant) {
 				if load.kind == Uz {
 					q := load.value
 					rz0 += q * l / 2
@@ -143,7 +143,7 @@ func (b *beam2d) localNoHingeLoads(l float64) *mat.VecDense {
 					rphiy1 += q * l * l / 12
 				}
 			},
-			func(load *neumannElementLinear) {
+			func(load *neumannLinear) {
 				if load.kind == Uz {
 					q0, q1 := load.first, load.last
 					rz0 += (7*q0 + 3*q1) * l / 20
@@ -180,9 +180,9 @@ func (b *beam2d) AddLoad(bc NeumannElementBC) bool {
 	supported := false
 
 	loadDispatch(bc,
-		func(l *neumannElementConcentrated) { supported = l.kind == Uz || l.kind == Phiy },
-		func(l *neumannElementConstant) { supported = l.kind == Uz },
-		func(l *neumannElementLinear) { supported = l.kind == Uz })
+		func(l *neumannConcentrated) { supported = l.kind == Uz || l.kind == Phiy },
+		func(l *neumannConstant) { supported = l.kind == Uz },
+		func(l *neumannLinear) { supported = l.kind == Uz })
 
 	return supported && b.oneDimElement.AddLoad(bc)
 }
@@ -240,7 +240,7 @@ func (b *beam2d) InterpolateMy(indices EqLayout, d *mat.VecDense) PolySequence {
 		var p PolyPiece
 
 		loadDispatch(bc,
-			func(load *neumannElementConcentrated) {
+			func(load *neumannConcentrated) {
 				if load.kind == Uz {
 					fz, a := load.value, load.position
 					p = PolyPiece{X0: a, XE: l, Coeff: []float64{fz * a, -fz}}
@@ -249,13 +249,13 @@ func (b *beam2d) InterpolateMy(indices EqLayout, d *mat.VecDense) PolySequence {
 					p = PolyPiece{X0: a, XE: l, Coeff: []float64{-my}}
 				}
 			},
-			func(load *neumannElementConstant) {
+			func(load *neumannConstant) {
 				if load.kind == Uz {
 					q := load.value
 					p = PolyPiece{X0: 0, XE: l, Coeff: []float64{0, 0, -q / 2}}
 				}
 			},
-			func(load *neumannElementLinear) {
+			func(load *neumannLinear) {
 				if load.kind == Uz {
 					q0, qE := load.first, load.last
 					p = PolyPiece{X0: 0, XE: l, Coeff: []float64{0, 0, -0.5 * q0, -(qE - q0) / (6 * l)}}

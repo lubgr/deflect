@@ -86,17 +86,17 @@ func (t *truss2d) localNoHingeLoads(l float64) *mat.VecDense {
 
 	for _, bc := range t.loads {
 		loadDispatch(bc,
-			func(load *neumannElementConcentrated) {
+			func(load *neumannConcentrated) {
 				a, b, fx := load.position, l-load.position, load.value
 				rx0 += fx * b / l
 				rx1 += fx * a / l
 			},
-			func(load *neumannElementConstant) {
+			func(load *neumannConstant) {
 				q := load.value
 				rx0 += q * l / 2
 				rx1 += q * l / 2
 			},
-			func(load *neumannElementLinear) {
+			func(load *neumannLinear) {
 				q0, q1 := load.first, load.last
 				rx0 += l * (2*q0 + q1) / 6.0
 				rx1 += l * (q0 + 2*q1) / 6.0
@@ -125,13 +125,13 @@ func (t *truss2d) AddLoad(bc NeumannElementBC) bool {
 	var kind Dof
 
 	loadDispatch(bc,
-		func(load *neumannElementConcentrated) {
+		func(load *neumannConcentrated) {
 			kind = load.kind
 		},
-		func(load *neumannElementConstant) {
+		func(load *neumannConstant) {
 			kind = load.kind
 		},
-		func(load *neumannElementLinear) {
+		func(load *neumannLinear) {
 			kind = load.kind
 		})
 
@@ -181,15 +181,15 @@ func (t *truss2d) InterpolateNx(nx0 float64) PolySequence {
 	for _, bc := range t.loads {
 		// We accepted only Ux loads in AddLoad, so we don't have to inspect the load's kind again
 		loadDispatch(bc,
-			func(load *neumannElementConcentrated) {
+			func(load *neumannConcentrated) {
 				fx, a := load.value, load.position
 				result = append(result, PolyPiece{X0: a, XE: l, Coeff: []float64{-fx}})
 			},
-			func(load *neumannElementConstant) {
+			func(load *neumannConstant) {
 				qx := load.value
 				result = append(result, PolyPiece{X0: 0, XE: l, Coeff: []float64{0, -qx}})
 			},
-			func(load *neumannElementLinear) {
+			func(load *neumannLinear) {
 				q0, qE := load.first, load.last
 				result = append(
 					result,

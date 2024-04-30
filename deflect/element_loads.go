@@ -2,7 +2,7 @@ package deflect
 
 import "fmt"
 
-type neumannElementConcentrated struct {
+type neumannConcentrated struct {
 	kind            Dof
 	position, value float64
 }
@@ -14,10 +14,10 @@ func NewElementConcentratedLoad(kind Dof, pos, value float64) (NeumannElementBC,
 		return nil, fmt.Errorf("can't instantiate element force at negative x = %v", pos)
 	}
 
-	return &neumannElementConcentrated{kind: kind, position: pos, value: value}, nil
+	return &neumannConcentrated{kind: kind, position: pos, value: value}, nil
 }
 
-type neumannElementConstant struct {
+type neumannConstant struct {
 	kind  Dof
 	value float64
 }
@@ -25,10 +25,10 @@ type neumannElementConstant struct {
 // NewElementConstantLoad instantiates an element Neumann boundary condition that applies a
 // distributed, constant load.
 func NewElementConstantLoad(kind Dof, value float64) NeumannElementBC {
-	return &neumannElementConstant{kind: kind, value: value}
+	return &neumannConstant{kind: kind, value: value}
 }
 
-type neumannElementLinear struct {
+type neumannLinear struct {
 	kind        Dof
 	first, last float64
 }
@@ -36,7 +36,7 @@ type neumannElementLinear struct {
 // NewElementLinearLoad instantiates an element Neumann boundary condition that applies a
 // distributed, linear load.
 func NewElementLinearLoad(kind Dof, first, last float64) NeumannElementBC {
-	return &neumannElementLinear{kind: kind, first: first, last: last}
+	return &neumannLinear{kind: kind, first: first, last: last}
 }
 
 // loadDispatch implements an exhaustive type switch over all NeumannElementBC types and calls the
@@ -55,16 +55,16 @@ func NewElementLinearLoad(kind Dof, first, last float64) NeumannElementBC {
 // since it still allows default initialisation of callbacks, which are then unusable at runtime.
 func loadDispatch(
 	bc NeumannElementBC,
-	concentrated func(*neumannElementConcentrated),
-	constant func(*neumannElementConstant),
-	linear func(*neumannElementLinear),
+	concentrated func(*neumannConcentrated),
+	constant func(*neumannConstant),
+	linear func(*neumannLinear),
 ) {
 	switch load := bc.(type) {
-	case *neumannElementConcentrated:
+	case *neumannConcentrated:
 		concentrated(load)
-	case *neumannElementConstant:
+	case *neumannConstant:
 		constant(load)
-	case *neumannElementLinear:
+	case *neumannLinear:
 		linear(load)
 	}
 }
