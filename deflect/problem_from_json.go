@@ -310,6 +310,10 @@ func formHingeMap(from map[string][]string, n0, n1 string) (map[Index]struct{}, 
 func translateMaterials(from map[string]matDescription) (map[string]LinearElastic, error) {
 	materials := map[string]LinearElastic{}
 
+	if len(from) == 0 {
+		return nil, errors.New("at least one material must be specified")
+	}
+
 	for id, desc := range from {
 		E, found0 := desc.Parameter["E"]
 		nu, found1 := desc.Parameter["nu"]
@@ -331,6 +335,11 @@ func translateMaterials(from map[string]matDescription) (map[string]LinearElasti
 
 func translateCrossSections(from map[string]csDescription) (map[string]CrossSection, error) {
 	cs := map[string]CrossSection{}
+
+	if len(from) == 0 {
+		return nil, errors.New("at least one crosssection must be specified")
+	}
+
 	var errs []error
 	fail := func(msg string, a ...any) { errs = append(errs, fmt.Errorf(msg, a...)) }
 
