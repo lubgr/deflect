@@ -177,24 +177,33 @@ func translateElements(
 			continue
 		}
 
-		switch desc.Kind {
-		case "truss2d":
-			n0, n1, errNodes := determineNodes(id, desc.Nodes, nodes)
-			hinges, errHinges := formHingeMap(desc.Hinges, n0.ID, n1.ID)
-			truss, errCreate := NewTruss2d(id, n0, n1, &mat, hinges)
+		n0, n1, errNodes := determineNodes(id, desc.Nodes, nodes)
+		if errNodes != nil {
+			err = errors.Join(err, errNodes)
+			continue
+		}
 
-			if errJoined := errors.Join(errNodes, errHinges, errCreate); errJoined != nil {
-				err = errors.Join(err, fmt.Errorf("create 2d truss '%v': %w", id, errJoined))
+		switch desc.Kind {
+		case "truss2d", "truss3d":
+			hinges, errHinges := formHingeMap(desc.Hinges, n0.ID, n1.ID)
+			truss, errCreate := func() (Element, error) {
+				if desc.Kind == "truss2d" {
+					return NewTruss2d(id, n0, n1, &mat, hinges)
+				}
+				return NewTruss3d(id, n0, n1, &mat, hinges)
+			}()
+
+			if errJoined := errors.Join(errHinges, errCreate); errJoined != nil {
+				err = errors.Join(err, fmt.Errorf("create truss '%v': %w", id, errJoined))
 				continue
 			}
 
 			elements = append(elements, truss)
 		case "frame2d":
-			n0, n1, errNodes := determineNodes(id, desc.Nodes, nodes)
 			hinges, errHinges := formHingeMap(desc.Hinges, n0.ID, n1.ID)
 			frame, errCreate := NewFrame2d(id, n0, n1, &mat, hinges)
 
-			if errJoined := errors.Join(errNodes, errHinges, errCreate); errJoined != nil {
+			if errJoined := errors.Join(errHinges, errCreate); errJoined != nil {
 				err = errors.Join(err, fmt.Errorf("create 2d frame '%v': %w", id, errJoined))
 				continue
 			}
