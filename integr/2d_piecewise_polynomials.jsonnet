@@ -1,39 +1,40 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local multi_load_interval_inclined_beam(q0, q1, F, M, l, angle) = {
   name: 'multi_load_interval_inclined_beam',
   description: 'Inclined beam with multiple element loads',
 
-  local alpha = angle * lib.pi / 180.0,
+  local alpha = angle * bvp.pi / 180.0,
 
   nodes: {
     A: [0, 0, 0],
     B: [l * std.cos(alpha), 0, l * std.sin(alpha)],
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
     AB: default.Frame2d(),
   },
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
+    A: bvp.Ux() + bvp.Uz(),
   },
 
   links: {
-    B: lib.InclinedSupportUxUz(alpha),
+    B: bvp.InclinedSupportUxUz(alpha),
   },
 
   neumann: {
-    AB: lib.qz([q0, q1]) +
-        lib.Fz(F[0], 1 / 4 * l) +
-        lib.My(M, 5 / 12 * l) +
-        lib.Fz(F[1], 7 / 12 * l) +
-        lib.Fz(F[2], 11 / 12 * l),
+    AB: bvp.qz([q0, q1]) +
+        bvp.Fz(F[0], 1 / 4 * l) +
+        bvp.My(M, 5 / 12 * l) +
+        bvp.Fz(F[1], 7 / 12 * l) +
+        bvp.Fz(F[2], 11 / 12 * l),
   },
 
   expected: {
@@ -49,15 +50,15 @@ local multi_load_interval_inclined_beam(q0, q1, F, M, l, angle) = {
       local vz4(x) = vz3(x) - F[2],
       local my4(x) = my3(x) - F[2] * (x - 11 / 12 * l),
 
-      AB: lib.Quadratic('Vz', range=[0, l / 4], eval=lib.Samples(vz0, 0, l / 4, 5)) +
-          lib.Quadratic('Vz', range=[l / 4, 7 / 12 * l], eval=lib.Samples(vz1, l / 4, 5 / 12 * l, 5)) +
-          lib.Cubic('My', range=[0, l / 4], eval=lib.Samples(my0, 0, l / 4, 5)) +
-          lib.Cubic('My', range=[l / 4, 5 / 12 * l], eval=lib.Samples(my1, l / 4, 5 / 12 * l, 5)) +
-          lib.Cubic('My', range=[5 / 12 * l, 7 / 12 * l], eval=lib.Samples(my2, 5 / 12 * l, 7 / 12 * l, 5)) +
-          lib.Quadratic('Vz', range=[7 / 12 * l, 11 / 12 * l], eval=lib.Samples(vz3, 7 / 12 * l, 11 / 12 * l, 5)) +
-          lib.Cubic('My', range=[7 / 12 * l, 11 / 12 * l], eval=lib.Samples(my3, 7 / 12 * l, 11 / 12 * l, 5)) +
-          lib.Quadratic('Vz', range=[11 / 12 * l, l], eval=lib.Samples(vz4, 11 / 12 * l, l, 5)) +
-          lib.Cubic('My', range=[11 / 12 * l, l], eval=lib.Samples(my4, 11 / 12 * l, l, 5)),
+      AB: test.Quadratic('Vz', range=[0, l / 4], eval=test.Samples(vz0, 0, l / 4, 5)) +
+          test.Quadratic('Vz', range=[l / 4, 7 / 12 * l], eval=test.Samples(vz1, l / 4, 5 / 12 * l, 5)) +
+          test.Cubic('My', range=[0, l / 4], eval=test.Samples(my0, 0, l / 4, 5)) +
+          test.Cubic('My', range=[l / 4, 5 / 12 * l], eval=test.Samples(my1, l / 4, 5 / 12 * l, 5)) +
+          test.Cubic('My', range=[5 / 12 * l, 7 / 12 * l], eval=test.Samples(my2, 5 / 12 * l, 7 / 12 * l, 5)) +
+          test.Quadratic('Vz', range=[7 / 12 * l, 11 / 12 * l], eval=test.Samples(vz3, 7 / 12 * l, 11 / 12 * l, 5)) +
+          test.Cubic('My', range=[7 / 12 * l, 11 / 12 * l], eval=test.Samples(my3, 7 / 12 * l, 11 / 12 * l, 5)) +
+          test.Quadratic('Vz', range=[11 / 12 * l, l], eval=test.Samples(vz4, 11 / 12 * l, l, 5)) +
+          test.Cubic('My', range=[11 / 12 * l, l], eval=test.Samples(my4, 11 / 12 * l, l, 5)),
     },
   },
 };
@@ -74,35 +75,35 @@ local multi_torque_beam = {
     B: [l, 0, 0],
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
     AB: default.Frame2d(),
   },
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    B: lib.Uz(),
+    A: bvp.Ux() + bvp.Uz(),
+    B: bvp.Uz(),
   },
 
   neumann: {
-    AB: lib.qz(q) +
-        lib.My(M, 1 * l / 6) +
-        lib.My(M, 2 * l / 6) +
-        lib.My(M, 3 * l / 6) +
-        lib.My(M, 4 * l / 6) +
-        lib.My(M, 5 * l / 6),
+    AB: bvp.qz(q) +
+        bvp.My(M, 1 * l / 6) +
+        bvp.My(M, 2 * l / 6) +
+        bvp.My(M, 3 * l / 6) +
+        bvp.My(M, 4 * l / 6) +
+        bvp.My(M, 5 * l / 6),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(q * l / 2 + 5 * M / l),
-      B: lib.Fz(q * l / 2 - 5 * M / l),
+      A: test.Fx(0) + test.Fz(q * l / 2 + 5 * M / l),
+      B: test.Fz(q * l / 2 - 5 * M / l),
     },
     interpolation: {
       // Ensures Vz is reduced to a single polynomial over the entire length
-      AB: lib.Linear('Vz', q * l / 2 + 5 * M / l, -q * l / 2 + 5 * M / l, range=[0, l]),
+      AB: test.Linear('Vz', q * l / 2 + 5 * M / l, -q * l / 2 + 5 * M / l, range=[0, l]),
     },
   },
 };

@@ -113,46 +113,4 @@
       Frame2d(nodes=[], hinges={})::
         element(nodes, hinges, 'frame2d'),
     },
-
-  local allowedPolynomials = ['Ux', 'Uz', 'Uy', 'Phiy', 'Phiz', 'Phix', 'Nx', 'Vz', 'Vy', 'My', 'Mz', 'Mx'],
-
-  Constant(kind, value, range=null)::
-    assert std.member(allowedPolynomials, kind) : "Unknown function '%s'" % kind;
-    [
-      {
-        kind: kind,
-        degree: 0,
-        boundary: [value],
-        [if range != null then 'range']: range,
-      },
-    ],
-
-  Linear(kind, first, second, range=null)::
-    assert std.member(allowedPolynomials, kind) : "Unknown function '%s'" % kind;
-    [
-      {
-        kind: kind,
-        degree: 1,
-        boundary: [first, second],
-        [if range != null then 'range']: range,
-      },
-    ],
-
-  local higherOrder(kind, degree, eval, range) = {
-    assert std.member(allowedPolynomials, kind) : "Unknown function '%s'" % kind,
-    kind: kind,
-    degree: degree,
-    [if range != null then 'range']: range,
-    [if eval != null then 'eval']: eval,
-  },
-
-  Quadratic(kind, eval=null, range=null):: [higherOrder(kind, 2, eval, range)],
-  Cubic(kind, eval=null, range=null):: [higherOrder(kind, 3, eval, range)],
-  Quartic(kind, eval=null, range=null):: [higherOrder(kind, 4, eval, range)],
-  Quintic(kind, eval=null, range=null):: [higherOrder(kind, 5, eval, range)],
-
-  Samples(f, x0, xE, n):: [
-    [x, f(x)]
-    for x in [x0 + i * (xE - x0) / n for i in std.range(0, n)]
-  ],
 }

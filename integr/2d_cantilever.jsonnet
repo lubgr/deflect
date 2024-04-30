@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local common(l, E, Iyy, fix) = {
   nodes: {
@@ -8,8 +9,8 @@ local common(l, E, Iyy, fix) = {
     B: [l, 0, 0],
   },
 
-  material: lib.LinElast('default', E=E, nu=0.3, rho=1),
-  crosssection: lib.Generic('default', A=1, Iyy=Iyy),
+  material: bvp.LinElast('default', E=E, nu=0.3, rho=1),
+  crosssection: bvp.Generic('default', A=1, Iyy=Iyy),
 
   elements: {
     AB: default.Frame2d(),
@@ -17,7 +18,7 @@ local common(l, E, Iyy, fix) = {
 
   dirichlet: {
     assert fix == 'left' || fix == 'right',
-    [if fix == 'left' then 'A' else 'B']: lib.Ux() + lib.Uz() + lib.Phiy(),
+    [if fix == 'left' then 'A' else 'B']: bvp.Ux() + bvp.Uz() + bvp.Phiy(),
   },
 };
 
@@ -25,7 +26,7 @@ local with_nodal_fz(F, l, E, Iyy) = common(l, E, Iyy, fix='left') {
   name: 'nodal_fz_%g' % F,
 
   neumann: {
-    B: lib.Fz(F),
+    B: bvp.Fz(F),
   },
 
   expected: {
@@ -33,18 +34,18 @@ local with_nodal_fz(F, l, E, Iyy) = common(l, E, Iyy, fix='left') {
     local uz(x) = -F / (E * Iyy) * (l / 2 * std.pow(x, 2) - std.pow(x, 3) / 6),
 
     reaction: {
-      A: lib.Fx(0) + lib.Fz(-F),
+      A: test.Fx(0) + test.Fz(-F),
     },
     primary: {
-      B: lib.Ux(0) +
-         lib.Uz(-uz(l)) +
-         lib.Phiy(-phiy(l)),
+      B: test.Ux(0) +
+         test.Uz(-uz(l)) +
+         test.Phiy(-phiy(l)),
     },
     interpolation: {
-      AB: lib.Constant('Vz', -F) +
-          lib.Linear('My', F * l, 0) +
-          lib.Quadratic('Phiy', eval=lib.Samples(phiy, 0, l, 5)) +
-          lib.Cubic('Uz', eval=lib.Samples(uz, 0, l, 5)),
+      AB: test.Constant('Vz', -F) +
+          test.Linear('My', F * l, 0) +
+          test.Quadratic('Phiy', eval=test.Samples(phiy, 0, l, 5)) +
+          test.Cubic('Uz', eval=test.Samples(uz, 0, l, 5)),
     },
   },
 };
@@ -53,7 +54,7 @@ local with_nodal_fz_inverse(F, l, E, Iyy) = common(l, E, Iyy, fix='right') {
   name: 'nodal_fz_%g_inverse' % F,
 
   neumann: {
-    A: lib.Fz(F),
+    A: bvp.Fz(F),
   },
 
   expected: {
@@ -61,17 +62,17 @@ local with_nodal_fz_inverse(F, l, E, Iyy) = common(l, E, Iyy, fix='right') {
     local uz(x) = -F / (E * Iyy) * (std.pow(x, 3) / 6 - l * l * x / 2 + std.pow(l, 3) / 3),
 
     reaction: {
-      B: lib.Fx(0) + lib.Fz(-F),
+      B: test.Fx(0) + test.Fz(-F),
     },
     primary: {
-      A: lib.Uz(-uz(0)) + lib.Phiy(-phiy(0)),
-      B: lib.Uz(-uz(l)) + lib.Phiy(-phiy(l)),
+      A: test.Uz(-uz(0)) + test.Phiy(-phiy(0)),
+      B: test.Uz(-uz(l)) + test.Phiy(-phiy(l)),
     },
     interpolation: {
-      AB: lib.Constant('Vz', F) +
-          lib.Linear('My', 0, F * l) +
-          lib.Quadratic('Phiy', eval=lib.Samples(phiy, 0, l, 5)) +
-          lib.Cubic('Uz', eval=lib.Samples(uz, 0, l, 5)),
+      AB: test.Constant('Vz', F) +
+          test.Linear('My', 0, F * l) +
+          test.Quadratic('Phiy', eval=test.Samples(phiy, 0, l, 5)) +
+          test.Cubic('Uz', eval=test.Samples(uz, 0, l, 5)),
     },
   },
 };
@@ -80,24 +81,24 @@ local with_nodal_my(M, l, E, Iyy) = common(l, E, Iyy, fix='left') {
   name: 'nodal_my_%g' % M,
 
   neumann: {
-    B: lib.My(M),
+    B: bvp.My(M),
   },
 
   expected: {
     local uz(x) = M / (E * Iyy) * (x * x / 2),
 
     reaction: {
-      A: lib.Fz(0) + lib.My(-M),
+      A: test.Fz(0) + test.My(-M),
     },
     primary: {
-      B: lib.Ux(0) +
-         lib.Uz(-uz(l)) +
-         lib.Phiy(M * l / (E * Iyy)),
+      B: test.Ux(0) +
+         test.Uz(-uz(l)) +
+         test.Phiy(M * l / (E * Iyy)),
     },
     interpolation: {
-      AB: lib.Constant('Vz', 0) +
-          lib.Constant('My', -M) +
-          lib.Quadratic('Uz', eval=lib.Samples(uz, 0, l, 5)),
+      AB: test.Constant('Vz', 0) +
+          test.Constant('My', -M) +
+          test.Quadratic('Uz', eval=test.Samples(uz, 0, l, 5)),
     },
   },
 };
@@ -106,22 +107,22 @@ local with_nodal_my_inverse(M, l, E, Iyy) = common(l, E, Iyy, fix='right') {
   name: 'nodal_my_inverse_%g' % M,
 
   neumann: {
-    A: lib.My(M),
+    A: bvp.My(M),
   },
 
   expected: {
     local uz(x) = -M / (E * Iyy) * (l * l / 2 - l * x + x * x / 2),
 
     reaction: {
-      B: lib.Fz(0) + lib.My(-M),
+      B: test.Fz(0) + test.My(-M),
     },
     primary: {
-      A: lib.Uz(-uz(0)),
+      A: test.Uz(-uz(0)),
     },
     interpolation: {
-      AB: lib.Constant('Vz', 0) +
-          lib.Constant('My', M) +
-          lib.Quadratic('Uz', eval=lib.Samples(uz, 0, l, 5)),
+      AB: test.Constant('Vz', 0) +
+          test.Constant('My', M) +
+          test.Quadratic('Uz', eval=test.Samples(uz, 0, l, 5)),
     },
   },
 };
@@ -130,24 +131,24 @@ local with_constant(q, l, E, Iyy) = common(l, E, Iyy, fix='left') {
   name: 'constant_qz_%g' % q,
 
   neumann: {
-    AB: lib.qz(q),
+    AB: bvp.qz(q),
   },
 
   expected: {
     local uz(x) = q / (E * Iyy) * (std.pow(x, 4) / 24 - std.pow(x, 3) * l / 6 + std.pow(l * x, 2) / 4),
 
     reaction: {
-      A: lib.Fx(0) + lib.Fz(q * l) + lib.My(-q * l * l / 2),
+      A: test.Fx(0) + test.Fz(q * l) + test.My(-q * l * l / 2),
     },
     primary: {
-      B: lib.Ux(0) +
-         lib.Uz(-uz(l)) +
-         lib.Phiy(q * std.pow(l, 3) / (6 * E * Iyy)),
+      B: test.Ux(0) +
+         test.Uz(-uz(l)) +
+         test.Phiy(q * std.pow(l, 3) / (6 * E * Iyy)),
     },
     interpolation: {
-      AB: lib.Linear('Vz', q * l, 0) +
-          lib.Quadratic('My', eval=lib.Samples(function(x) (-q / 2 * std.pow(l - x, 2)), 0, l, 5)) +
-          lib.Quartic('Uz', eval=lib.Samples(uz, 0, l, 7)),
+      AB: test.Linear('Vz', q * l, 0) +
+          test.Quadratic('My', eval=test.Samples(function(x) (-q / 2 * std.pow(l - x, 2)), 0, l, 5)) +
+          test.Quartic('Uz', eval=test.Samples(uz, 0, l, 7)),
     },
   },
 };
@@ -156,22 +157,22 @@ local with_constant_inverse(q, l, E, Iyy) = common(l, E, Iyy, fix='right') {
   name: 'constant_qz_%g_inverse' % q,
 
   neumann: {
-    AB: lib.qz(q),
+    AB: bvp.qz(q),
   },
 
   expected: {
     local uz(x) = q * std.pow(l, 4) / (24 * E * Iyy) * (3 - 4 * x / l + std.pow(x / l, 4)),
 
     reaction: {
-      B: lib.Fx(0) + lib.Fz(q * l) + lib.My(q * l * l / 2),
+      B: test.Fx(0) + test.Fz(q * l) + test.My(q * l * l / 2),
     },
     primary: {
-      A: lib.Uz(-uz(0)),
+      A: test.Uz(-uz(0)),
     },
     interpolation: {
-      AB: lib.Linear('Vz', 0, -q * l) +
-          lib.Quadratic('My', eval=[[0, 0], [l, -q * l * l / 2]]) +
-          lib.Quartic('Uz', eval=lib.Samples(uz, 0, l, 7)),
+      AB: test.Linear('Vz', 0, -q * l) +
+          test.Quadratic('My', eval=[[0, 0], [l, -q * l * l / 2]]) +
+          test.Quartic('Uz', eval=test.Samples(uz, 0, l, 7)),
     },
   },
 };

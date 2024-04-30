@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local tetrahedon(Fz, Fy, l, b, h) = {
   // name: 'tetrahedon_%g_%g_%g_%g' % [Fz, l, b, h],
@@ -13,8 +14,8 @@ local tetrahedon(Fz, Fy, l, b, h) = {
     D: [l, b / 2, -h],
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
     AB: default.Truss3d(),
@@ -23,12 +24,12 @@ local tetrahedon(Fz, Fy, l, b, h) = {
   },
 
   dirichlet: {
-    [node]: lib.Ux() + lib.Uy() + lib.Uz()
+    [node]: bvp.Ux() + bvp.Uy() + bvp.Uz()
     for node in ['B', 'C', 'D']
   },
 
   neumann: {
-    A: lib.Fz(Fz) + lib.Fy(Fy),
+    A: bvp.Fz(Fz) + bvp.Fy(Fy),
   },
 
   expected: {
@@ -44,16 +45,16 @@ local tetrahedon(Fz, Fy, l, b, h) = {
     },
 
     reaction: {
-      B: lib.Fx(-Rfz.x) + lib.Fy(0) + lib.Fz(0),
-      C: lib.Fx(Rfz.x / 2 + Rfy.x) + lib.Fy(-Rfz.y - Rfy.y) + lib.Fz(-Rfz.z - Rfy.z),
-      D: lib.Fx(Rfz.x / 2 - Rfy.x) + lib.Fy(Rfz.y - Rfy.y) + lib.Fz(-Rfz.z + Rfy.z),
+      B: test.Fx(-Rfz.x) + test.Fy(0) + test.Fz(0),
+      C: test.Fx(Rfz.x / 2 + Rfy.x) + test.Fy(-Rfz.y - Rfy.y) + test.Fz(-Rfz.z - Rfy.z),
+      D: test.Fx(Rfz.x / 2 - Rfy.x) + test.Fy(Rfz.y - Rfy.y) + test.Fz(-Rfz.z + Rfy.z),
     },
     interpolation: {
       local L = std.sqrt(b * b / 4 + l * l + h * h),
 
-      AB: lib.Constant('Nx', -Rfz.x),
-      AC: lib.Constant('Nx', (Rfz.x / 2 + Rfy.x) * l / L - (-Rfz.y - Rfy.y) * b / 2 / L - (-Rfz.z - Rfy.z) * h / L),
-      AD: lib.Constant('Nx', (Rfz.x / 2 - Rfy.x) * l / L + (Rfz.y - Rfy.y) * b / 2 / L - (-Rfz.z + Rfy.z) * h / L),
+      AB: test.Constant('Nx', -Rfz.x),
+      AC: test.Constant('Nx', (Rfz.x / 2 + Rfy.x) * l / L - (-Rfz.y - Rfy.y) * b / 2 / L - (-Rfz.z - Rfy.z) * h / L),
+      AD: test.Constant('Nx', (Rfz.x / 2 - Rfy.x) * l / L + (Rfz.y - Rfy.y) * b / 2 / L - (-Rfz.z + Rfy.z) * h / L),
     },
   },
 };

@@ -1,4 +1,5 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
 local frame(l, h, Ih, Iv) = {
   nodes:
@@ -9,7 +10,7 @@ local frame(l, h, Ih, Iv) = {
       D: [l, 0, h],
     },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
   crosssection: {
     beam: {
       kind: 'constants',
@@ -41,8 +42,8 @@ local frame(l, h, Ih, Iv) = {
   },
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    B: lib.Ux() + lib.Uz(),
+    A: bvp.Ux() + bvp.Uz(),
+    B: bvp.Ux() + bvp.Uz(),
   },
 
   // Constant that helps expressing expected reactions:
@@ -61,20 +62,20 @@ local const_qz_top(q, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
   name: 'const_qz_top_%g' % q,
 
   neumann: {
-    TOP: lib.qz(q),
+    TOP: bvp.qz(q),
   },
 
   expected: relaxed_tol {
     local H = q * l * l / (4 * h * (2 * $.k + 3)),
 
     reaction: {
-      A: lib.Fz(q * l / 2) + lib.Fx(H),
-      B: lib.Fz(q * l / 2) + lib.Fx(-H),
+      A: test.Fz(q * l / 2) + test.Fx(H),
+      B: test.Fz(q * l / 2) + test.Fx(-H),
     },
     interpolation: {
-      LEFT: lib.Linear('My', 0, -H * h),
-      TOP: lib.Quadratic('My', eval=[[0, -H * h], [l / 2, -H * h + q * l * l / 8], [l, -H * h]]),
-      RIGHT: lib.Linear('My', -H * h, 0),
+      LEFT: test.Linear('My', 0, -H * h),
+      TOP: test.Quadratic('My', eval=[[0, -H * h], [l / 2, -H * h + q * l * l / 8], [l, -H * h]]),
+      RIGHT: test.Linear('My', -H * h, 0),
     },
   },
 };
@@ -83,7 +84,7 @@ local const_qz_right(q, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
   name: 'const_qz_right_%g' % q,
 
   neumann: {
-    RIGHT: lib.qz(q),
+    RIGHT: bvp.qz(q),
   },
 
   expected: relaxed_tol {
@@ -92,13 +93,13 @@ local const_qz_right(q, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
 
     reaction: {
       local V = q * h * h / (2 * l),
-      A: lib.Fz(V) + lib.Fx(H1),
-      B: lib.Fz(-V) + lib.Fx(-H2),
+      A: test.Fz(V) + test.Fx(H1),
+      B: test.Fz(-V) + test.Fx(-H2),
     },
     interpolation: {
-      LEFT: lib.Linear('My', 0, -H1 * h),
-      TOP: lib.Linear('My', -H1 * h, -H2 * h - q * h * h / 2),
-      RIGHT: lib.Quadratic('My', eval=[[0, -H2 * h - q * h * h / 2], [h, 0]]),
+      LEFT: test.Linear('My', 0, -H1 * h),
+      TOP: test.Linear('My', -H1 * h, -H2 * h - q * h * h / 2),
+      RIGHT: test.Quadratic('My', eval=[[0, -H2 * h - q * h * h / 2], [h, 0]]),
     },
   },
 };
@@ -107,7 +108,7 @@ local fz_element_top(F, a, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
   name: 'fz_top_%g_%g' % [F, a],
 
   neumann: {
-    TOP: lib.Fz(F, a),
+    TOP: bvp.Fz(F, a),
   },
 
   expected: relaxed_tol {
@@ -115,14 +116,14 @@ local fz_element_top(F, a, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
     local H = 3 / 2 * F * a * b / (h * l * (2 * $.k + 3)),
 
     reaction: {
-      A: lib.Fz(F * b / l) + lib.Fx(H),
-      B: lib.Fz(F * a / l) + lib.Fx(-H),
+      A: test.Fz(F * b / l) + test.Fx(H),
+      B: test.Fz(F * a / l) + test.Fx(-H),
     },
     interpolation: {
-      LEFT: lib.Linear('My', 0, -H * h),
-      TOP: lib.Linear('My', -H * h, -H * h + a * b * F / l, range=[0, a]) +
-           lib.Linear('My', -H * h + a * b * F / l, -H * h, range=[a, l]),
-      RIGHT: lib.Linear('My', -H * h, 0),
+      LEFT: test.Linear('My', 0, -H * h),
+      TOP: test.Linear('My', -H * h, -H * h + a * b * F / l, range=[0, a]) +
+           test.Linear('My', -H * h + a * b * F / l, -H * h, range=[a, l]),
+      RIGHT: test.Linear('My', -H * h, 0),
     },
   },
 };
@@ -131,19 +132,19 @@ local fx_node_top_right(F, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
   name: 'fz_node_right_top_%g' % F,
 
   neumann: {
-    D: lib.Fx(-F),
+    D: bvp.Fx(-F),
   },
 
   expected: relaxed_tol {
     reaction: {
-      A: lib.Fx(F / 2) + lib.Fz(F * h / l),
-      B: lib.Fx(F / 2) + lib.Fz(-F * h / l),
+      A: test.Fx(F / 2) + test.Fz(F * h / l),
+      B: test.Fx(F / 2) + test.Fz(-F * h / l),
     },
     interpolation: {
       local M = -F / 2 * h,
-      LEFT: lib.Linear('My', 0, M),
-      TOP: lib.Linear('My', M, -M),
-      RIGHT: lib.Linear('My', -M, 0),
+      LEFT: test.Linear('My', 0, M),
+      TOP: test.Linear('My', M, -M),
+      RIGHT: test.Linear('My', -M, 0),
     },
   },
 };
@@ -154,7 +155,7 @@ local fx_right(F, b, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
 
   neumann: {
     // Need to convert between a and b since the element goes from top to bottom:
-    RIGHT: lib.Fz(F, b),
+    RIGHT: test.Fz(F, b),
   },
 
   expected: relaxed_tol {
@@ -162,14 +163,14 @@ local fx_right(F, b, l, h, Ih, Iv) = frame(l, h, Ih, Iv) + {
     local H2 = H1 - F,
 
     reaction: {
-      A: lib.Fz(F * a / l) + lib.Fx(H1),
-      B: lib.Fz(-F * a / l) + lib.Fx(-H2),
+      A: test.Fz(F * a / l) + test.Fx(H1),
+      B: test.Fz(-F * a / l) + test.Fx(-H2),
     },
     interpolation: {
-      LEFT: lib.Linear('My', 0, -H1 * h),
-      TOP: lib.Linear('My', -H1 * h, -H2 * h - F * (h - a)),
-      RIGHT: lib.Linear('My', -H2 * h - F * (h - a), -H2 * a, range=[0, b]) +
-             lib.Linear('My', -H2 * a, 0, range=[b, h]),
+      LEFT: test.Linear('My', 0, -H1 * h),
+      TOP: test.Linear('My', -H1 * h, -H2 * h - F * (h - a)),
+      RIGHT: test.Linear('My', -H2 * h - F * (h - a), -H2 * a, range=[0, b]) +
+             test.Linear('My', -H2 * a, 0, range=[b, h]),
     },
   },
 };

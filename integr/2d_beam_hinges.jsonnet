@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local beams_with_shear_hinge(q, l, E, Iyy, hinge) = {
   name: 'beams_shear_hinge',
@@ -11,8 +12,8 @@ local beams_with_shear_hinge(q, l, E, Iyy, hinge) = {
     C: [3 * l, 0, 0],
   },
 
-  material: lib.LinElast('default', E=E, nu=0.3, rho=1),
-  crosssection: lib.Generic('default', A=0.01, Iyy=Iyy),
+  material: bvp.LinElast('default', E=E, nu=0.3, rho=1),
+  crosssection: bvp.Generic('default', A=0.01, Iyy=Iyy),
 
   elements: {
     assert hinge == 'left' || hinge == 'right',
@@ -21,19 +22,19 @@ local beams_with_shear_hinge(q, l, E, Iyy, hinge) = {
   },
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    C: lib.Uz() + lib.Phiy(),
+    A: bvp.Ux() + bvp.Uz(),
+    C: bvp.Uz() + bvp.Phiy(),
   },
 
   neumann: {
-    AB: lib.qz(q),
-    BC: lib.qz(q),
+    AB: bvp.qz(q),
+    BC: bvp.qz(q),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(2 * q * l),
-      C: lib.Fz(q * l) + lib.My(-3 / 2 * q * l * l),
+      A: test.Fx(0) + test.Fz(2 * q * l),
+      C: test.Fz(q * l) + test.My(-3 / 2 * q * l * l),
     },
     interpolation: {
       local EI = E * Iyy,
@@ -50,16 +51,16 @@ local beams_with_shear_hinge(q, l, E, Iyy, hinge) = {
       // scenarios where this assertion fails, but that's very very unlikely.
       assert uzAB(2 * l) != uzBC(0),
 
-      AB: lib.Linear('Vz', 2 * q * l, 0) +
-          lib.Quadratic('My', eval=[[0, 0], [2 * l, 2 * q * l * l]]) +
-          lib.Cubic('Phiy', eval=lib.Samples(phiyAB, 0, 2 * l, 7)) +
-          lib.Quartic('Uz', eval=lib.Samples(uzAB, 0, 2 * l, 7)),
-      BC: lib.Linear('Vz', 0, -q * l) +
-          lib.Quadratic('My', eval=[[0, 2 * q * l * l], [l, 3 / 2 * q * l * l]]) +
-          lib.Cubic('Phiy', eval=lib.Samples(phiyBC, 0, l, 5)) +
+      AB: test.Linear('Vz', 2 * q * l, 0) +
+          test.Quadratic('My', eval=[[0, 0], [2 * l, 2 * q * l * l]]) +
+          test.Cubic('Phiy', eval=test.Samples(phiyAB, 0, 2 * l, 7)) +
+          test.Quartic('Uz', eval=test.Samples(uzAB, 0, 2 * l, 7)),
+      BC: test.Linear('Vz', 0, -q * l) +
+          test.Quadratic('My', eval=[[0, 2 * q * l * l], [l, 3 / 2 * q * l * l]]) +
+          test.Cubic('Phiy', eval=test.Samples(phiyBC, 0, l, 5)) +
           // Ensures that the interpolation decouples the nodal displacement from the
           // one computed on the element level because of the hinge.
-          lib.Quartic('Uz', eval=lib.Samples(uzBC, 0, l, 5)),
+          test.Quartic('Uz', eval=test.Samples(uzBC, 0, l, 5)),
     },
   },
 };
@@ -73,8 +74,8 @@ local beams_with_rot_hinge(q, l, E, Iyy, hinge) = {
     C: [2 * l, 0, 0],
   },
 
-  material: lib.LinElast('default', E=E, nu=0.3, rho=1),
-  crosssection: lib.Generic('default', A=0.01, Iyy=Iyy),
+  material: bvp.LinElast('default', E=E, nu=0.3, rho=1),
+  crosssection: bvp.Generic('default', A=0.01, Iyy=Iyy),
 
   elements: {
     assert hinge == 'left' || hinge == 'right',
@@ -83,19 +84,19 @@ local beams_with_rot_hinge(q, l, E, Iyy, hinge) = {
   },
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    C: lib.Uz() + lib.Phiy(),
+    A: bvp.Ux() + bvp.Uz(),
+    C: bvp.Uz() + bvp.Phiy(),
   },
 
   neumann: {
-    AB: lib.qz(q),
-    BC: lib.qz(q),
+    AB: bvp.qz(q),
+    BC: bvp.qz(q),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(q * l / 2),
-      C: lib.Fz(3 / 2 * q * l) + lib.My(q * l * l),
+      A: test.Fx(0) + test.Fz(q * l / 2),
+      C: test.Fz(3 / 2 * q * l) + test.My(q * l * l),
     },
     interpolation: {
       local EI = E * Iyy,
@@ -108,14 +109,14 @@ local beams_with_rot_hinge(q, l, E, Iyy, hinge) = {
       local uzBC(x) = -1 / EI * (-q * l / 12 * std.pow(x, 3) - q / 24 * std.pow(x, 4)
                                  + 5 / 12 * q * l3 * x - 7 / 24 * q * l4),
 
-      AB: lib.Linear('Vz', q * l / 2, -q * l / 2) +
-          lib.Quadratic('My', eval=[[0, 0], [l, 0]]) +
-          lib.Cubic('Phiy', eval=lib.Samples(phiyAB, 0, l, 5)) +
-          lib.Quartic('Uz', eval=lib.Samples(uzAB, 0, l, 5)),
-      BC: lib.Linear('Vz', -q * l / 2, -3 / 2 * q * l) +
-          lib.Quadratic('My', eval=[[0, 0], [l, -q * l * l]]) +
-          lib.Cubic('Phiy', eval=lib.Samples(phiyBC, 0, l, 5)) +
-          lib.Quartic('Uz', eval=lib.Samples(uzBC, 0, l, 5)),
+      AB: test.Linear('Vz', q * l / 2, -q * l / 2) +
+          test.Quadratic('My', eval=[[0, 0], [l, 0]]) +
+          test.Cubic('Phiy', eval=test.Samples(phiyAB, 0, l, 5)) +
+          test.Quartic('Uz', eval=test.Samples(uzAB, 0, l, 5)),
+      BC: test.Linear('Vz', -q * l / 2, -3 / 2 * q * l) +
+          test.Quadratic('My', eval=[[0, 0], [l, -q * l * l]]) +
+          test.Cubic('Phiy', eval=test.Samples(phiyBC, 0, l, 5)) +
+          test.Quartic('Uz', eval=test.Samples(uzBC, 0, l, 5)),
     },
   },
 };

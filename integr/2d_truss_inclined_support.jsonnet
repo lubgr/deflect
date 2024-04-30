@@ -1,13 +1,14 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local triangle(angle) = {
   name: 'triangle_%d' % angle,
   description: 'Truss triangle with inclined support',
 
   local l = 1.0,
-  local alpha = angle * lib.pi / 180.0,
+  local alpha = angle * bvp.pi / 180.0,
 
   nodes: {
     A: [0, 0, 0],
@@ -15,8 +16,8 @@ local triangle(angle) = {
     C: [0, 0, l],
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
     AB: default.Truss2d(),
@@ -25,30 +26,30 @@ local triangle(angle) = {
   },
 
   dirichlet: {
-    C: lib.Uz(),
-    B: lib.Uz(),
+    C: bvp.Uz(),
+    B: bvp.Uz(),
   },
 
   local F = 10e3,
 
   neumann: {
-    B: lib.Fx(F),
+    B: bvp.Fx(F),
   },
 
   links: {
-    A: lib.InclinedSupportUxUz(alpha),
+    A: bvp.InclinedSupportUxUz(alpha),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(-F) + lib.Fz(F / std.tan(alpha)),
-      B: lib.Fz(0),
-      C: lib.Fz(-F / std.tan(alpha)),
+      A: test.Fx(-F) + test.Fz(F / std.tan(alpha)),
+      B: test.Fz(0),
+      C: test.Fz(-F / std.tan(alpha)),
     },
     interpolation: {
-      AB: lib.Constant('Nx', F),
-      CB: lib.Constant('Nx', 0),
-      AC: lib.Constant('Nx', -F / std.tan(alpha)),
+      AB: test.Constant('Nx', F),
+      CB: test.Constant('Nx', 0),
+      AC: test.Constant('Nx', -F / std.tan(alpha)),
     },
   },
 };

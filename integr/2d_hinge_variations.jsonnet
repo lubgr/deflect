@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local common(l) = {
   nodes: {
@@ -10,15 +11,15 @@ local common(l) = {
     D: [3 * l, 0, 0],
   },
 
-  material: lib.LinElast('default', E=210000e6, nu=0.3, rho=1),
-  crosssection: lib.Generic('default', A=0.01, Iyy=10e-6),
+  material: bvp.LinElast('default', E=210000e6, nu=0.3, rho=1),
+  crosssection: bvp.Generic('default', A=0.01, Iyy=10e-6),
 };
 
 local qz_common(q, l) = common(l) {
   local elements = self.elements,
 
   neumann: {
-    [id]: lib.qz(q)
+    [id]: bvp.qz(q)
     for id in std.objectFields(elements)
   },
 };
@@ -27,8 +28,8 @@ local qz_hinge_phi_rightward(q, l) = qz_common(q, l) + {
   name: 'qz_hinge_phi_rightward',
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz() + lib.Phiy(),
-    D: lib.Uz(),
+    A: bvp.Ux() + bvp.Uz() + bvp.Phiy(),
+    D: bvp.Uz(),
   },
 
   elements: {
@@ -39,13 +40,13 @@ local qz_hinge_phi_rightward(q, l) = qz_common(q, l) + {
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(2 * q * l) + lib.My(-3 / 2 * q * l * l),
-      D: lib.Fz(q * l),
+      A: test.Fx(0) + test.Fz(2 * q * l) + test.My(-3 / 2 * q * l * l),
+      D: test.Fz(q * l),
     },
     interpolation: {
-      AB: lib.Quadratic('My', eval=[[0, -3 / 2 * q * l * l], [l, 0]]),
-      BC: lib.Quadratic('My', eval=[[0, 0], [l, q * l * l / 2]]),
-      CD: lib.Quadratic('My', eval=[[0, q * l * l / 2], [l, 0]]),
+      AB: test.Quadratic('My', eval=[[0, -3 / 2 * q * l * l], [l, 0]]),
+      BC: test.Quadratic('My', eval=[[0, 0], [l, q * l * l / 2]]),
+      CD: test.Quadratic('My', eval=[[0, q * l * l / 2], [l, 0]]),
     },
   },
 };
@@ -61,9 +62,9 @@ local qz_hinge_phi_leftward(q, l) = qz_hinge_phi_rightward(q, l) + qz_common(-q,
 
   expected: super.expected {
     interpolation: {
-      BA: lib.Quadratic('My', eval=[[0, 0], [l, 3 / 2 * q * l * l]]),
-      CB: lib.Quadratic('My', eval=[[0, -q * l * l / 2], [l, 0]]),
-      DC: lib.Quadratic('My', eval=[[0, 0], [l, -q * l * l / 2]]),
+      BA: test.Quadratic('My', eval=[[0, 0], [l, 3 / 2 * q * l * l]]),
+      CB: test.Quadratic('My', eval=[[0, -q * l * l / 2], [l, 0]]),
+      DC: test.Quadratic('My', eval=[[0, 0], [l, -q * l * l / 2]]),
     },
   },
 };
@@ -72,8 +73,8 @@ local qz_hinge_uz_rightward(q, l) = qz_common(q, l) + {
   name: 'qz_hinge_uz_rightward',
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz() + lib.Phiy(),
-    D: lib.Uz(),
+    A: bvp.Ux() + bvp.Uz() + bvp.Phiy(),
+    D: bvp.Uz(),
   },
 
   elements: {
@@ -86,13 +87,13 @@ local qz_hinge_uz_rightward(q, l) = qz_common(q, l) + {
     local l2 = l * l,
 
     reaction: {
-      A: lib.Fx(0) + lib.Fz(q * l) + lib.My(3 / 2 * q * l2),
-      D: lib.Fz(2 * q * l),
+      A: test.Fx(0) + test.Fz(q * l) + test.My(3 / 2 * q * l2),
+      D: test.Fz(2 * q * l),
     },
     interpolation: {
-      AB: lib.Quadratic('My', eval=[[0, 3 / 2 * q * l2], [l, 2 * q * l2]]),
-      BC: lib.Quadratic('My', eval=[[0, 2 * q * l2], [l, 3 / 2 * q * l2]]),
-      CD: lib.Quadratic('My', eval=[[0, 3 / 2 * q * l2], [l, 0]]),
+      AB: test.Quadratic('My', eval=[[0, 3 / 2 * q * l2], [l, 2 * q * l2]]),
+      BC: test.Quadratic('My', eval=[[0, 2 * q * l2], [l, 3 / 2 * q * l2]]),
+      CD: test.Quadratic('My', eval=[[0, 3 / 2 * q * l2], [l, 0]]),
     },
   },
 };
@@ -110,9 +111,9 @@ local qz_hinge_uz_leftward(q, l) = qz_hinge_uz_rightward(q, l) + qz_common(-q, l
     local l2 = l * l,
 
     interpolation: {
-      BA: lib.Quadratic('My', eval=[[0, -2 * q * l2], [l, -3 / 2 * q * l2]]),
-      CB: lib.Quadratic('My', eval=[[0, -3 / 2 * q * l2], [l, -2 * q * l2]]),
-      DC: lib.Quadratic('My', eval=[[0, 0], [l, -3 / 2 * q * l2]]),
+      BA: test.Quadratic('My', eval=[[0, -2 * q * l2], [l, -3 / 2 * q * l2]]),
+      CB: test.Quadratic('My', eval=[[0, -3 / 2 * q * l2], [l, -2 * q * l2]]),
+      DC: test.Quadratic('My', eval=[[0, 0], [l, -3 / 2 * q * l2]]),
     },
   },
 };
@@ -121,8 +122,8 @@ local qz_hinge_phi_phi(q, l) = qz_common(q, l) + {
   name: 'qz_hinge_phi_phi',
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz() + lib.Phiy(),
-    D: lib.Uz() + lib.Phiy(),
+    A: bvp.Ux() + bvp.Uz() + bvp.Phiy(),
+    D: bvp.Uz() + bvp.Phiy(),
   },
 
   elements: {
@@ -135,13 +136,13 @@ local qz_hinge_phi_phi(q, l) = qz_common(q, l) + {
     local l2 = l * l,
 
     reaction: {
-      A: lib.Fx(0) + lib.Fz(3 / 2 * q * l) + lib.My(-q * l2),
-      D: lib.Fz(3 / 2 * q * l) + lib.My(q * l2),
+      A: test.Fx(0) + test.Fz(3 / 2 * q * l) + test.My(-q * l2),
+      D: test.Fz(3 / 2 * q * l) + test.My(q * l2),
     },
     interpolation: {
-      AB: lib.Quadratic('My', eval=[[0, -q * l2], [l, 0]]),
-      BC: lib.Quadratic('My', eval=[[0, 0], [l / 2, q * l2 / 8], [l, 0]]),
-      CD: lib.Quadratic('My', eval=[[0, 0], [l, -q * l2]]),
+      AB: test.Quadratic('My', eval=[[0, -q * l2], [l, 0]]),
+      BC: test.Quadratic('My', eval=[[0, 0], [l / 2, q * l2 / 8], [l, 0]]),
+      CD: test.Quadratic('My', eval=[[0, 0], [l, -q * l2]]),
     },
   },
 };
@@ -180,8 +181,8 @@ local qz_hinge_uz_phi_rightward(q, l) = qz_common(q, l) {
   name: 'qz_hinge_uz_phi_rightward',
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz() + lib.Phiy(),
-    D: lib.Uz() + lib.Phiy(),
+    A: bvp.Ux() + bvp.Uz() + bvp.Phiy(),
+    D: bvp.Uz() + bvp.Phiy(),
   },
 
   elements: {
@@ -194,13 +195,13 @@ local qz_hinge_uz_phi_rightward(q, l) = qz_common(q, l) {
     local l2 = l * l,
 
     reaction: {
-      A: lib.Fx(0) + lib.Fz(q * l) + lib.My(0),
-      D: lib.Fz(2 * q * l) + lib.My(3 / 2 * q * l2),
+      A: test.Fx(0) + test.Fz(q * l) + test.My(0),
+      D: test.Fz(2 * q * l) + test.My(3 / 2 * q * l2),
     },
     interpolation: {
-      AB: lib.Quadratic('My', eval=[[0, 0], [l, q * l2 / 2]]),
-      BC: lib.Quadratic('My', eval=[[0, q * l2 / 2], [l, 0]]),
-      CD: lib.Quadratic('My', eval=[[0, 0], [l, -3 / 2 * q * l2]]),
+      AB: test.Quadratic('My', eval=[[0, 0], [l, q * l2 / 2]]),
+      BC: test.Quadratic('My', eval=[[0, q * l2 / 2], [l, 0]]),
+      CD: test.Quadratic('My', eval=[[0, 0], [l, -3 / 2 * q * l2]]),
     },
   },
 };
@@ -218,17 +219,17 @@ local qz_hinge_uz_phi_leftward(q, l) = qz_hinge_uz_phi_rightward(q, l) + qz_comm
     local l2 = l * l,
 
     interpolation: {
-      BA: lib.Quadratic('My', eval=[[0, -q * l2 / 2], [l, 0]]),
-      CB: lib.Quadratic('My', eval=[[0, 0], [l, -q * l2 / 2]]),
-      DC: lib.Quadratic('My', eval=[[0, 3 / 2 * q * l2], [l, 0]]),
+      BA: test.Quadratic('My', eval=[[0, -q * l2 / 2], [l, 0]]),
+      CB: test.Quadratic('My', eval=[[0, 0], [l, -q * l2 / 2]]),
+      DC: test.Quadratic('My', eval=[[0, 3 / 2 * q * l2], [l, 0]]),
     },
   },
 };
 
 local fz_common(F, l) = common(l) {
   neumann: {
-    B: lib.Fz(-F),
-    C: lib.Fz(-F),
+    B: bvp.Fz(-F),
+    C: bvp.Fz(-F),
   },
 };
 
@@ -239,13 +240,13 @@ local fz_hinge_phi_rightward(F, l) = fz_common(F, l) {
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(3 / 2 * F) + lib.My(-3 / 2 * F * l),
-      D: lib.Fz(F / 2),
+      A: test.Fx(0) + test.Fz(3 / 2 * F) + test.My(-3 / 2 * F * l),
+      D: test.Fz(F / 2),
     },
     interpolation: {
-      AB: lib.Linear('My', -3 / 2 * F * l, 0),
-      BC: lib.Linear('My', 0, F * l / 2),
-      CD: lib.Linear('My', F * l / 2, 0),
+      AB: test.Linear('My', -3 / 2 * F * l, 0),
+      BC: test.Linear('My', 0, F * l / 2),
+      CD: test.Linear('My', F * l / 2, 0),
     },
   },
 };
@@ -256,9 +257,9 @@ local fz_hinge_phi_leftward(F, l) = fz_hinge_phi_rightward(F, l) {
 
   expected: super.expected + {
     interpolation: {
-      BA: lib.Linear('My', 0, 3 / 2 * F * l),
-      CB: lib.Linear('My', -F * l / 2, 0),
-      DC: lib.Linear('My', 0, -F * l / 2),
+      BA: test.Linear('My', 0, 3 / 2 * F * l),
+      CB: test.Linear('My', -F * l / 2, 0),
+      DC: test.Linear('My', 0, -F * l / 2),
     },
   },
 };
@@ -271,13 +272,13 @@ local fz_hinge_uz_rightward_1(F, l) = fz_common(F, l) + {
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(0) + lib.My(3 * F * l),
-      D: lib.Fz(2 * F),
+      A: test.Fx(0) + test.Fz(0) + test.My(3 * F * l),
+      D: test.Fz(2 * F),
     },
     interpolation: {
-      AB: lib.Constant('My', 3 * F * l),
-      BC: lib.Linear('My', 3 * F * l, 2 * F * l),
-      CD: lib.Linear('My', 2 * F * l, 0),
+      AB: test.Constant('My', 3 * F * l),
+      BC: test.Linear('My', 3 * F * l, 2 * F * l),
+      CD: test.Linear('My', 2 * F * l, 0),
     },
   },
 };
@@ -288,9 +289,9 @@ local fz_hinge_uz_leftward_1(F, l) = fz_hinge_uz_rightward_1(F, l) + {
 
   expected: super.expected {
     interpolation: {
-      BA: lib.Constant('My', -3 * F * l),
-      CB: lib.Linear('My', -2 * F * l, -3 * F * l),
-      DC: lib.Linear('My', 0, -2 * F * l),
+      BA: test.Constant('My', -3 * F * l),
+      CB: test.Linear('My', -2 * F * l, -3 * F * l),
+      DC: test.Linear('My', 0, -2 * F * l),
     },
   },
 };
@@ -306,13 +307,13 @@ local fz_hinge_uz_rightward_2(F, l) = fz_hinge_uz_rightward_1(F, l) + {
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(F) + lib.My(0),
-      D: lib.Fz(F),
+      A: test.Fx(0) + test.Fz(F) + test.My(0),
+      D: test.Fz(F),
     },
     interpolation: {
-      AB: lib.Linear('My', 0, F * l),
-      BC: lib.Constant('My', F * l),
-      CD: lib.Linear('My', F * l, 0),
+      AB: test.Linear('My', 0, F * l),
+      BC: test.Constant('My', F * l),
+      CD: test.Linear('My', F * l, 0),
     },
   },
 };
@@ -327,9 +328,9 @@ local fz_hinge_uz_leftward_2(F, l) = fz_hinge_uz_rightward_2(F, l) + {
 
   expected: super.expected + {
     interpolation: {
-      BA: lib.Linear('My', -F * l, 0),
-      CB: lib.Constant('My', -F * l),
-      DC: lib.Linear('My', 0, -F * l),
+      BA: test.Linear('My', -F * l, 0),
+      CB: test.Constant('My', -F * l),
+      DC: test.Linear('My', 0, -F * l),
     },
   },
 };
@@ -341,13 +342,13 @@ local fz_hinge_phi_phi(F, l) = fz_common(F, l) + {
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(F) + lib.My(-F * l),
-      D: lib.Fz(F) + lib.My(F * l),
+      A: test.Fx(0) + test.Fz(F) + test.My(-F * l),
+      D: test.Fz(F) + test.My(F * l),
     },
     interpolation: {
-      AB: lib.Linear('My', -F * l, 0),
-      BC: lib.Constant('My', 0),
-      CD: lib.Linear('My', 0, -F * l),
+      AB: test.Linear('My', -F * l, 0),
+      BC: test.Constant('My', 0),
+      CD: test.Linear('My', 0, -F * l),
     },
   },
 };
@@ -359,13 +360,13 @@ local fz_hinge_uz_phi_rightward_1(F, l) = fz_common(F, l) + {
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(F) + lib.My(-F * l),
-      D: lib.Fz(F) + lib.My(F * l),
+      A: test.Fx(0) + test.Fz(F) + test.My(-F * l),
+      D: test.Fz(F) + test.My(F * l),
     },
     interpolation: {
-      AB: lib.Linear('My', -F * l, 0),
-      BC: lib.Constant('My', 0),
-      CD: lib.Linear('My', 0, -F * l),
+      AB: test.Linear('My', -F * l, 0),
+      BC: test.Constant('My', 0),
+      CD: test.Linear('My', 0, -F * l),
     },
   },
 };
@@ -376,9 +377,9 @@ local fz_hinge_uz_phi_leftward_1(F, l) = fz_hinge_uz_phi_rightward_1(F, l) + {
 
   expected: super.expected + {
     interpolation: {
-      BA: lib.Linear('My', 0, F * l),
-      CB: lib.Constant('My', 0),
-      DC: lib.Linear('My', F * l, 0),
+      BA: test.Linear('My', 0, F * l),
+      CB: test.Constant('My', 0),
+      DC: test.Linear('My', F * l, 0),
     },
   },
 };
@@ -395,13 +396,13 @@ local fz_hinge_uz_phi_rightward_2(F, l) = fz_common(F, l) + {
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(0) + lib.My(F * l),
-      D: lib.Fz(2 * F) + lib.My(2 * F * l),
+      A: test.Fx(0) + test.Fz(0) + test.My(F * l),
+      D: test.Fz(2 * F) + test.My(2 * F * l),
     },
     interpolation: {
-      AB: lib.Constant('My', F * l),
-      BC: lib.Linear('My', F * l, 0),
-      CD: lib.Linear('My', 0, -2 * F * l),
+      AB: test.Constant('My', F * l),
+      BC: test.Linear('My', F * l, 0),
+      CD: test.Linear('My', 0, -2 * F * l),
     },
   },
 };
@@ -417,9 +418,9 @@ local fz_hinge_uz_phi_leftward_2(F, l) = fz_hinge_uz_phi_rightward_2(F, l) + {
 
   expected: super.expected + {
     interpolation: {
-      BA: lib.Constant('My', -F * l),
-      CB: lib.Linear('My', 0, -F * l),
-      DC: lib.Linear('My', 2 * F * l, 0),
+      BA: test.Constant('My', -F * l),
+      CB: test.Linear('My', 0, -F * l),
+      DC: test.Linear('My', 2 * F * l, 0),
     },
   },
 };
@@ -427,10 +428,10 @@ local fz_hinge_uz_phi_leftward_2(F, l) = fz_hinge_uz_phi_rightward_2(F, l) + {
 local hinge_fails = {
   // We constrain most dofs, so that the provoked failure is always attributed to the hinge pattern.
   dirichlet: {
-    A: lib.Ux() + lib.Uz() + lib.Phiy(),
-    B: lib.Uz(),
-    C: lib.Uz(),
-    D: lib.Ux() + lib.Uz() + lib.Phiy(),
+    A: bvp.Ux() + bvp.Uz() + bvp.Phiy(),
+    B: bvp.Uz(),
+    C: bvp.Uz(),
+    D: bvp.Ux() + bvp.Uz() + bvp.Phiy(),
   },
 
   expected: {

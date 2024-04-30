@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local with_axial_hinge(q, F, l) = {
   name: 'with_axial_hinge',
@@ -13,8 +14,8 @@ local with_axial_hinge(q, F, l) = {
     D: [l, 0, 0],
   },
 
-  material: lib.LinElast('default', E=210000e6, nu=0.3, rho=1),
-  crosssection: lib.Generic('default', A=0.01, Iyy=10e-6),
+  material: bvp.LinElast('default', E=210000e6, nu=0.3, rho=1),
+  crosssection: bvp.Generic('default', A=0.01, Iyy=10e-6),
 
   elements: {
     AD: default.Frame2d(),
@@ -23,34 +24,34 @@ local with_axial_hinge(q, F, l) = {
   },
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    B: lib.Uz(),
-    C: lib.Ux(),
+    A: bvp.Ux() + bvp.Uz(),
+    B: bvp.Uz(),
+    C: bvp.Ux(),
   },
 
   neumann: {
-    B: lib.Fx(-F),
-    C: lib.Fz(-F),
-    AD: lib.qx(-q),
-    DC: lib.qx(-q),
+    B: bvp.Fx(-F),
+    C: bvp.Fz(-F),
+    AD: bvp.qx(-q),
+    DC: bvp.qx(-q),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(F + q * l) + lib.Fz(-2 * F),
-      B: lib.Fz(3 * F),
-      C: lib.Fx(q * l),
+      A: test.Fx(F + q * l) + test.Fz(-2 * F),
+      B: test.Fz(3 * F),
+      C: test.Fx(q * l),
     },
     interpolation: {
-      AD: lib.Linear('Nx', -F - q * l, -F) +
-          lib.Constant('Vz', -2 * F) +
-          lib.Linear('My', 0, -2 * F * l),
-      DC: lib.Linear('Nx', 0, q * l) +
-          lib.Constant('Vz', F) +
-          lib.Linear('My', -F * l, 0),
-      DB: lib.Constant('Nx', -3 * F) +
-          lib.Constant('Vz', F) +
-          lib.Linear('My', -F * l, 0),
+      AD: test.Linear('Nx', -F - q * l, -F) +
+          test.Constant('Vz', -2 * F) +
+          test.Linear('My', 0, -2 * F * l),
+      DC: test.Linear('Nx', 0, q * l) +
+          test.Constant('Vz', F) +
+          test.Linear('My', -F * l, 0),
+      DB: test.Constant('Nx', -3 * F) +
+          test.Constant('Vz', F) +
+          test.Linear('My', -F * l, 0),
     },
   },
 };

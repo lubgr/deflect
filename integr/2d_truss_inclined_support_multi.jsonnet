@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local F = 10e3;
 
@@ -17,8 +18,8 @@ local structure(alpha, beta, gamma, a) = {
     N3: [2 * a, 0, a],
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
     AN1: default.Truss2d(nodes=['A', 'N1']),
@@ -34,15 +35,15 @@ local structure(alpha, beta, gamma, a) = {
   },
 
   neumann: {
-    N1: lib.Fx(2 * F) + lib.Fz(F),
-    N2: lib.Fz(-F),
-    N3: lib.Fx(F) + lib.Fz(-2 * F),
+    N1: bvp.Fx(2 * F) + bvp.Fz(F),
+    N2: bvp.Fz(-F),
+    N3: bvp.Fx(F) + bvp.Fz(-2 * F),
   },
 
   links: {
-    A: lib.InclinedSupportUxUz(alpha * lib.pi / 180.0),
-    B: lib.InclinedSupportUxUz(beta * lib.pi / 180.0),
-    C: lib.InclinedSupportUxUz(gamma * lib.pi / 180.0),
+    A: bvp.InclinedSupportUxUz(alpha * bvp.pi / 180.0),
+    B: bvp.InclinedSupportUxUz(beta * bvp.pi / 180.0),
+    C: bvp.InclinedSupportUxUz(gamma * bvp.pi / 180.0),
   },
 };
 
@@ -59,16 +60,16 @@ local structure(alpha, beta, gamma, a) = {
 //   A = (-x[0]*sa, x[0]*ca)
 //   B = (-x[1]*sb, x[1]*cb)
 //   C = (-x[2]*sg, x[2]*cg)
-//   print(f"  A: lib.Fx({A[0]}) + lib.Fz({A[1]}),")
-//   print(f"  B: lib.Fx({B[0]}) + lib.Fz({B[1]}),")
-//   print(f"  C: lib.Fx({C[0]}) + lib.Fz({C[1]}),")
+//   print(f"  A: test.Fx({A[0]}) + test.Fz({A[1]}),")
+//   print(f"  B: test.Fx({B[0]}) + test.Fz({B[1]}),")
+//   print(f"  C: test.Fx({C[0]}) + test.Fz({C[1]}),")
 
 local bvp0 = structure(alpha=45, beta=100, gamma=90, a=1) + {
   expected: {
     reaction: {
-      A: lib.Fx(-15387.07185026498) + lib.Fz(15387.071850264982),
-      B: lib.Fx(26161.215550794954) + lib.Fz(4612.928149735015),
-      C: lib.Fx(-40774.143700529974) + lib.Fz(2.4966962285414125e-12),
+      A: test.Fx(-15387.07185026498) + test.Fz(15387.071850264982),
+      B: test.Fx(26161.215550794954) + test.Fz(4612.928149735015),
+      C: test.Fx(-40774.143700529974) + test.Fz(2.4966962285414125e-12),
     },
   },
 };
@@ -76,9 +77,9 @@ local bvp0 = structure(alpha=45, beta=100, gamma=90, a=1) + {
 local bvp1 = structure(alpha=0, beta=0, gamma=90, a=0.9876) + {
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(10e3),
-      B: lib.Fx(0) + lib.Fz(10e3),
-      C: lib.Fx(-30e3) + lib.Fz(0),
+      A: test.Fx(0) + test.Fz(10e3),
+      B: test.Fx(0) + test.Fz(10e3),
+      C: test.Fx(-30e3) + test.Fz(0),
     },
   },
 };
@@ -86,9 +87,9 @@ local bvp1 = structure(alpha=0, beta=0, gamma=90, a=0.9876) + {
 local bvp2 = structure(alpha=90, beta=0, gamma=90, a=10) + {
   expected: {
     reaction: {
-      A: lib.Fx(-20e3) + lib.Fz(0),
-      B: lib.Fx(0) + lib.Fz(20e3),
-      C: lib.Fx(-10e3) + lib.Fz(0),
+      A: test.Fx(-20e3) + test.Fz(0),
+      B: test.Fx(0) + test.Fz(20e3),
+      C: test.Fx(-10e3) + test.Fz(0),
     },
   },
 };
@@ -96,9 +97,9 @@ local bvp2 = structure(alpha=90, beta=0, gamma=90, a=10) + {
 local bvp3 = structure(alpha=15, beta=25, gamma=35, a=1) + {
   expected: {
     reaction: {
-      A: lib.Fx(10786.549852769092) + lib.Fz(-40255.952088908845),
-      B: lib.Fx(-2801.2804422787344) + lib.Fz(6007.365294754823),
-      C: lib.Fx(-37985.26941049036) + lib.Fz(54248.58679415402),
+      A: test.Fx(10786.549852769092) + test.Fz(-40255.952088908845),
+      B: test.Fx(-2801.2804422787344) + test.Fz(6007.365294754823),
+      C: test.Fx(-37985.26941049036) + test.Fz(54248.58679415402),
     },
   },
 };
@@ -106,9 +107,9 @@ local bvp3 = structure(alpha=15, beta=25, gamma=35, a=1) + {
 local bvp4 = structure(alpha=200, beta=250, gamma=300, a=1) + {
   expected: {
     reaction: {
-      A: lib.Fx(788149.3380187545) + lib.Fz(-2165422.509364637),
-      B: lib.Fx(-2823460.4899709313) + lib.Fz(1027655.5759760885),
-      C: lib.Fx(2005311.1519521773) + lib.Fz(1157766.9333885484),
+      A: test.Fx(788149.3380187545) + test.Fz(-2165422.509364637),
+      B: test.Fx(-2823460.4899709313) + test.Fz(1027655.5759760885),
+      C: test.Fx(2005311.1519521773) + test.Fz(1157766.9333885484),
     },
   },
 };

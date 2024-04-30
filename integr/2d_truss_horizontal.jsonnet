@@ -1,7 +1,8 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
 local l = 1.0;
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local single = {
   nodes: {
@@ -13,12 +14,12 @@ local single = {
     AZ: default.Truss2d(),
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    Z: lib.Uz(),
+    A: bvp.Ux() + bvp.Uz(),
+    Z: bvp.Uz(),
   },
 };
 
@@ -39,26 +40,26 @@ local multi = single {
   },
 
   dirichlet: super.dirichlet + {
-    B: lib.Uz(),
-    C: lib.Uz(),
-    D: lib.Uz(),
-    E: lib.Uz(),
-    F: lib.Uz(),
+    B: bvp.Uz(),
+    C: bvp.Uz(),
+    D: bvp.Uz(),
+    E: bvp.Uz(),
+    F: bvp.Uz(),
   },
 };
 
 local nodal_fx = {
   neumann: {
-    Z: lib.Fx(100e3),
+    Z: bvp.Fx(100e3),
   },
 
   expected: {
     primary: {
-      A: lib.Ux() + lib.Uz(),
-      Z: lib.Ux(1 / 3 * 1e-3) + lib.Uz(),
+      A: test.Ux() + test.Uz(),
+      Z: test.Ux(1 / 3 * 1e-3) + test.Uz(),
     },
     reaction: {
-      A: lib.Fx(-100e3),
+      A: test.Fx(-100e3),
     },
   },
 };
@@ -68,19 +69,19 @@ local single_nodal_fx = single + nodal_fx {
   description: 'Horizontal line, single truss',
 
   neumann: {
-    Z: lib.Fx(100e3)
+    Z: bvp.Fx(100e3)
        // The vertical load doesn't cause any deformation, it goes straight into the support.
        // Specifying it here is to assert that the reaction force ends up in the results.
-       + lib.Fz(-250e3),
+       + bvp.Fz(-250e3),
   },
 
   expected: super.expected + {
     reaction: super.reaction + {
-      Z: lib.Fz(250e3),
+      Z: test.Fz(250e3),
     },
     interpolation: {
-      AZ: lib.Constant('Nx', 100e3) +
-          lib.Linear('Ux', 0, 1 / 3 * 1e-3),
+      AZ: test.Constant('Nx', 100e3) +
+          test.Linear('Ux', 0, 1 / 3 * 1e-3),
     },
   },
 };
@@ -92,7 +93,7 @@ local single_element_fx = single {
   local a = 0.7655 * l,
 
   neumann: {
-    AZ: lib.Fx(fx, a),
+    AZ: bvp.Fx(fx, a),
   },
 
   expected: {
@@ -100,16 +101,16 @@ local single_element_fx = single {
     local deltaU = eps * a,
 
     primary: {
-      Z: lib.Ux(deltaU),
+      Z: test.Ux(deltaU),
     },
     reaction: {
-      A: lib.Fx(-fx),
+      A: test.Fx(-fx),
     },
     interpolation: {
-      AZ: lib.Constant('Nx', fx, range=[0, a]) +
-          lib.Constant('Nx', 0, range=[a, l]) +
-          lib.Linear('Ux', 0, deltaU, range=[0, a]) +
-          lib.Constant('Ux', deltaU, range=[a, l]),
+      AZ: test.Constant('Nx', fx, range=[0, a]) +
+          test.Constant('Nx', 0, range=[a, l]) +
+          test.Linear('Ux', 0, deltaU, range=[0, a]) +
+          test.Constant('Ux', deltaU, range=[a, l]),
     },
   },
 };
@@ -120,16 +121,16 @@ local single_const_qx = single {
   local q = 10e3,
 
   neumann: {
-    AZ: lib.qx(q),
+    AZ: bvp.qx(q),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(-q * l),
+      A: test.Fx(-q * l),
     },
     interpolation: {
-      AZ: lib.Linear('Nx', q * l, 0) +
-          lib.Quadratic('Ux', eval=[[0, 0], [l, 0.5 * q * l * l / (30000e6 * 0.01)]]),
+      AZ: test.Linear('Nx', q * l, 0) +
+          test.Quadratic('Ux', eval=[[0, 0], [l, 0.5 * q * l * l / (30000e6 * 0.01)]]),
     },
   },
 };
@@ -141,18 +142,18 @@ local single_linear_qx = single {
   local q1 = 4.123e3,
 
   neumann: {
-    AZ: lib.qx([q0, q1]),
+    AZ: bvp.qx([q0, q1]),
   },
 
   expected: {
     local H = (q0 + q1) * l / 2,
 
     reaction: {
-      A: lib.Fx(-H),
+      A: test.Fx(-H),
     },
     interpolation: {
-      AZ: lib.Quadratic('Nx', eval=[[0, H], [l, 0]]) +
-          lib.Cubic('Ux', eval=[[0, 0]]),
+      AZ: test.Quadratic('Nx', eval=[[0, H], [l, 0]]) +
+          test.Cubic('Ux', eval=[[0, 0]]),
     },
   },
 };
@@ -163,22 +164,22 @@ local multi_const_qx = multi {
   local q = 10e3,
 
   neumann: {
-    [elmt]: lib.qx(q)
+    [elmt]: bvp.qx(q)
     for elmt in ['AB', 'BC', 'CD', 'DE', 'EF', 'FZ']
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(-q * l),
+      A: test.Fx(-q * l),
     },
     interpolation: {
       local ql = q * l,
-      AB: lib.Linear('Nx', ql, 4 / 5 * ql),
-      BC: lib.Linear('Nx', 4 / 5 * ql, 2 / 3 * ql),
-      CD: lib.Linear('Nx', 2 / 3 * ql, ql / 2),
-      DE: lib.Linear('Nx', ql / 2, 2 / 5 * ql),
-      EF: lib.Linear('Nx', 2 / 5 * ql, 1 / 4 * ql),
-      FZ: lib.Linear('Nx', 1 / 4 * ql, 0),
+      AB: test.Linear('Nx', ql, 4 / 5 * ql),
+      BC: test.Linear('Nx', 4 / 5 * ql, 2 / 3 * ql),
+      CD: test.Linear('Nx', 2 / 3 * ql, ql / 2),
+      DE: test.Linear('Nx', ql / 2, 2 / 5 * ql),
+      EF: test.Linear('Nx', 2 / 5 * ql, 1 / 4 * ql),
+      FZ: test.Linear('Nx', 1 / 4 * ql, 0),
     },
   },
 };
@@ -190,27 +191,27 @@ local multi_linear_qx = multi {
 
   neumann: {
     // The load steps come from the x-coordinates of the nodes, they are not evenly spaced.
-    AB: lib.qx([0 / 1 * qe, 1 / 5 * qe]),
-    BC: lib.qx([1 / 5 * qe, 1 / 3 * qe]),
-    CD: lib.qx([1 / 3 * qe, 1 / 2 * qe]),
-    DE: lib.qx([1 / 2 * qe, 3 / 5 * qe]),
-    EF: lib.qx([3 / 5 * qe, 3 / 4 * qe]),
-    FZ: lib.qx([3 / 4 * qe, 1 / 1 * qe]),
+    AB: bvp.qx([0 / 1 * qe, 1 / 5 * qe]),
+    BC: bvp.qx([1 / 5 * qe, 1 / 3 * qe]),
+    CD: bvp.qx([1 / 3 * qe, 1 / 2 * qe]),
+    DE: bvp.qx([1 / 2 * qe, 3 / 5 * qe]),
+    EF: bvp.qx([3 / 5 * qe, 3 / 4 * qe]),
+    FZ: bvp.qx([3 / 4 * qe, 1 / 1 * qe]),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(-qe * l / 2),
+      A: test.Fx(-qe * l / 2),
     },
     interpolation: {
       local N(x) = qe * l / 2 - qe / (2 * l) * x * x,
-      local samples(x0, x1, n) = std.map(function(eval) [eval[0] - x0, eval[1]], lib.Samples(N, x0, x1, n)),
-      AB: lib.Quadratic('Nx', eval=samples(0 / 1 * l, 1 / 5 * l, 5)),
-      BC: lib.Quadratic('Nx', eval=samples(1 / 5 * l, 1 / 3 * l, 5)),
-      CD: lib.Quadratic('Nx', eval=samples(1 / 3 * l, 1 / 2 * l, 5)),
-      DE: lib.Quadratic('Nx', eval=samples(1 / 2 * l, 3 / 5 * l, 5)),
-      EF: lib.Quadratic('Nx', eval=samples(3 / 5 * l, 3 / 4 * l, 5)),
-      FZ: lib.Quadratic('Nx', eval=samples(3 / 4 * l, 1 / 1 * l, 5)),
+      local samples(x0, x1, n) = std.map(function(eval) [eval[0] - x0, eval[1]], test.Samples(N, x0, x1, n)),
+      AB: test.Quadratic('Nx', eval=samples(0 / 1 * l, 1 / 5 * l, 5)),
+      BC: test.Quadratic('Nx', eval=samples(1 / 5 * l, 1 / 3 * l, 5)),
+      CD: test.Quadratic('Nx', eval=samples(1 / 3 * l, 1 / 2 * l, 5)),
+      DE: test.Quadratic('Nx', eval=samples(1 / 2 * l, 3 / 5 * l, 5)),
+      EF: test.Quadratic('Nx', eval=samples(3 / 5 * l, 3 / 4 * l, 5)),
+      FZ: test.Quadratic('Nx', eval=samples(3 / 4 * l, 1 / 1 * l, 5)),
     },
   },
 };
@@ -229,8 +230,8 @@ local single_ux = single {
   },
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    Z: lib.Ux(1 / 3 * 1e-3) + lib.Uz(),
+    A: bvp.Ux() + bvp.Uz(),
+    Z: bvp.Ux(1 / 3 * 1e-3) + bvp.Uz(),
   },
 
   expected: {
@@ -245,7 +246,7 @@ local multi_ux = multi {
   local deltaU = 1 / 3 * 1e-3,
 
   dirichlet: super.dirichlet + {
-    Z: lib.Ux(deltaU) + lib.Uz(),
+    Z: bvp.Ux(deltaU) + bvp.Uz(),
   },
 
   neumann: {},
@@ -254,7 +255,7 @@ local multi_ux = multi {
     interpolation: {
       local EA = 0.01 * 30000e6,
       local eps = deltaU / l,
-      [elmt]: lib.Constant('Nx', eps * EA)
+      [elmt]: test.Constant('Nx', eps * EA)
       for elmt in ['AB', 'BC', 'CD', 'DE', 'EF', 'FZ']
     },
   },

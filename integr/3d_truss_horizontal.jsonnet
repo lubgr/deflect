@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 {
   name: 'horizontal_two_elements',
@@ -19,17 +20,17 @@ local default = lib.Defaults();
     BC: default.Truss3d(),
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   dirichlet: {
-    A: lib.Uz() + lib.Uy(),
-    B: lib.Uz() + lib.Uy(),
-    C: lib.Ux() + lib.Uy() + lib.Uz(),
+    A: bvp.Uz() + bvp.Uy(),
+    B: bvp.Uz() + bvp.Uy(),
+    C: bvp.Ux() + bvp.Uy() + bvp.Uz(),
   },
 
   neumann: {
-    A: lib.Fx(F),
+    A: bvp.Fx(F),
   },
 
   expected: {
@@ -37,19 +38,19 @@ local default = lib.Defaults();
     local uB = uA / 2,
 
     reaction: {
-      C: lib.Fx(-F),
+      C: test.Fx(-F),
     },
     primary: {
-      A: lib.Ux(uA),
-      B: lib.Ux(uB),
+      A: test.Ux(uA),
+      B: test.Ux(uB),
     },
     interpolation: {
       // The Ux assertions ensure that the right sign is used for the nodal Ux value
       // when integrating ε to become the displacement field.
-      AB: lib.Constant('Nx', -F) +
-          lib.Linear('Ux', uA, uB),
-      BC: lib.Constant('Nx', -F) +
-          lib.Linear('Ux', uB, 0),
+      AB: test.Constant('Nx', -F) +
+          test.Linear('Ux', uA, uB),
+      BC: test.Constant('Nx', -F) +
+          test.Linear('Ux', uB, 0),
     },
   },
 }

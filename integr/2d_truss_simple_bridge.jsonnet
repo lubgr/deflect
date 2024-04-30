@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local bridge(a) = {
   name: 'bridge_%.2f' % a,
@@ -20,8 +21,8 @@ local bridge(a) = {
     J: [4 * a, 0, a],
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   local trusses(ids) = {
     [id]: default.Truss2d()
@@ -49,25 +50,25 @@ local bridge(a) = {
   ]),
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    E: lib.Uz(),
+    A: bvp.Ux() + bvp.Uz(),
+    E: bvp.Uz(),
   },
 
   neumann: {
-    F: lib.Fz(-5e3),
-    G: lib.Fz(-10e3),
-    H: lib.Fz(-10e3),
-    I: lib.Fz(-10e3),
-    J: lib.Fz(-5e3),
+    F: bvp.Fz(-5e3),
+    G: bvp.Fz(-10e3),
+    H: bvp.Fz(-10e3),
+    I: bvp.Fz(-10e3),
+    J: bvp.Fz(-5e3),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(0) + lib.Fz(20e3),
-      E: lib.Fz(20e3),
+      A: test.Fx(0) + test.Fz(20e3),
+      E: test.Fz(20e3),
     },
     interpolation: {
-      local Nx(value) = lib.Constant('Nx', value),
+      local Nx(value) = test.Constant('Nx', value),
       // Lower horizontal:
       AB: Nx(0),
       BC: Nx(15e3),

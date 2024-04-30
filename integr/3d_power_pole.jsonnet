@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 {
   // This boundary value problem is published on https://labs.degreetutors.com, which links against
@@ -8,8 +9,8 @@ local default = lib.Defaults();
   // https://docs.google.com/spreadsheets/d/1FmxJPeD_yA1AKOaWs_-vYf5IIV2LSzM9oZJAuyBxsNo/
   name: 'power_pole',
 
-  material: lib.LinElast('default', E=200000e6, nu=0.3, rho=78000 / 9.81),
-  crosssection: lib.Generic('default', A=0.05, Iyy=10e-6),
+  material: bvp.LinElast('default', E=200000e6, nu=0.3, rho=78000 / 9.81),
+  crosssection: bvp.Generic('default', A=0.05, Iyy=10e-6),
 
   // Avoid typing out numeric keys all the time:
   local indexPlusOneToKey(array) = {
@@ -427,25 +428,25 @@ local default = lib.Defaults();
   ])),
 
   dirichlet: {
-    '1': lib.Ux() + lib.Uz() + lib.Uy(),
-    '4': lib.Ux() + lib.Uz() + lib.Uy(),
-    '51': lib.Ux() + lib.Uz() + lib.Uy(),
-    '52': lib.Ux() + lib.Uz() + lib.Uy(),
+    '1': bvp.Ux() + bvp.Uz() + bvp.Uy(),
+    '4': bvp.Ux() + bvp.Uz() + bvp.Uy(),
+    '51': bvp.Ux() + bvp.Uz() + bvp.Uy(),
+    '52': bvp.Ux() + bvp.Uz() + bvp.Uy(),
   },
 
   neumann: {
-    '49': lib.Fz(-5000),
-    '59': lib.Fz(-5000),
-    '60': lib.Fz(-5000),
-    '64': lib.Fz(-5000),
-    '67': lib.Fz(-5000),
-    '68': lib.Fz(-5000),
-    '71': lib.Fz(-5000),
-    '72': lib.Fz(-5000),
-    '79': lib.Fz(-5000),
-    '80': lib.Fz(-5000),
-    '83': lib.Fz(-5000),
-    '84': lib.Fz(-5000),
+    '49': bvp.Fz(-5000),
+    '59': bvp.Fz(-5000),
+    '60': bvp.Fz(-5000),
+    '64': bvp.Fz(-5000),
+    '67': bvp.Fz(-5000),
+    '68': bvp.Fz(-5000),
+    '71': bvp.Fz(-5000),
+    '72': bvp.Fz(-5000),
+    '79': bvp.Fz(-5000),
+    '80': bvp.Fz(-5000),
+    '83': bvp.Fz(-5000),
+    '84': bvp.Fz(-5000),
   },
 
   expected: {
@@ -455,14 +456,14 @@ local default = lib.Defaults();
     },
 
     reaction: {
-      '1': lib.Fx(4275.992) + lib.Fy(4275.907) + lib.Fz(15000),
-      '4': lib.Fx(-4275.992) + lib.Fy(4275.907) + lib.Fz(15000),
-      '51': lib.Fx(-4275.992) + lib.Fy(-4275.907) + lib.Fz(15000),
-      '52': lib.Fx(4275.992) + lib.Fy(-4275.907) + lib.Fz(15000),
+      '1': test.Fx(4275.992) + test.Fy(4275.907) + test.Fz(15000),
+      '4': test.Fx(-4275.992) + test.Fy(4275.907) + test.Fz(15000),
+      '51': test.Fx(-4275.992) + test.Fy(-4275.907) + test.Fz(15000),
+      '52': test.Fx(4275.992) + test.Fy(-4275.907) + test.Fz(15000),
     },
 
     interpolation:
-      indexPlusOneToKey(std.map(function(value) lib.Constant('Nx', value), [
+      indexPlusOneToKey(std.map(function(value) test.Constant('Nx', value), [
         -7846.98,
         -0.0858227,
         -7846.956,

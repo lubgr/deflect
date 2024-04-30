@@ -1,6 +1,7 @@
-local lib = import 'common.libsonnet';
+local bvp = import 'bvp.libsonnet';
+local test = import 'test.libsonnet';
 
-local default = lib.Defaults();
+local default = bvp.Defaults();
 
 local triangle(H, V, a) = {
   name: 'triangle_%.2f_%.2f_%.2f' % [H, V, a],
@@ -12,8 +13,8 @@ local triangle(H, V, a) = {
     C: [a, 0, a],
   },
 
-  material: lib.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: lib.Rectangle('default', b=0.1, h=0.1),
+  material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
+  crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
     AB: default.Truss2d(),
@@ -22,23 +23,23 @@ local triangle(H, V, a) = {
   },
 
   dirichlet: {
-    A: lib.Ux() + lib.Uz(),
-    B: lib.Uz(),
+    A: bvp.Ux() + bvp.Uz(),
+    B: bvp.Uz(),
   },
 
   neumann: {
-    C: lib.Fx(H) + lib.Fz(V),
+    C: bvp.Fx(H) + bvp.Fz(V),
   },
 
   expected: {
     reaction: {
-      A: lib.Fx(-H) + lib.Fz((H + V) / (-2)),
-      B: lib.Fz((H - V) / 2),
+      A: test.Fx(-H) + test.Fz((H + V) / (-2)),
+      B: test.Fz((H - V) / 2),
     },
     interpolation: {
-      CB: lib.Constant('Nx', -(H - V) / std.sqrt(2)),
-      AB: lib.Constant('Nx', (H - V) / 2),
-      AC: lib.Constant('Nx', (H + V) / std.sqrt(2)),
+      CB: test.Constant('Nx', -(H - V) / std.sqrt(2)),
+      AB: test.Constant('Nx', (H - V) / 2),
+      AC: test.Constant('Nx', (H + V) / std.sqrt(2)),
     },
   },
 };
