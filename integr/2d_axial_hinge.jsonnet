@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local with_axial_hinge(q, F, l) = {
   name: 'with_axial_hinge',
   description: '3 frames with one normal force hinge',
@@ -18,9 +16,9 @@ local with_axial_hinge(q, F, l) = {
   crosssection: bvp.Generic('default', A=0.01, Iyy=10e-6),
 
   elements: {
-    AD: default.Frame2d(),
-    DC: default.Frame2d(hinges={ D: ['Ux'] }),
-    DB: default.Frame2d(),
+    AD: bvp.Frame2d(),
+    DC: bvp.Frame2d(hinges={ D: ['Ux'] }),
+    DB: bvp.Frame2d(),
   },
 
   dirichlet: {

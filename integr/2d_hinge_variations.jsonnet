@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local common(l) = {
   nodes: {
     A: [0, 0, 0],
@@ -33,9 +31,9 @@ local qz_hinge_phi_rightward(q, l) = qz_common(q, l) + {
   },
 
   elements: {
-    AB: default.Frame2d(hinges={ B: ['Phiy'] }),
-    BC: default.Frame2d(),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(hinges={ B: ['Phiy'] }),
+    BC: bvp.Frame2d(),
+    CD: bvp.Frame2d(),
   },
 
   expected: {
@@ -55,9 +53,9 @@ local qz_hinge_phi_leftward(q, l) = qz_hinge_phi_rightward(q, l) + qz_common(-q,
   name: 'qz_hinge_phi_leftward',
 
   elements: {
-    BA: default.Frame2d(hinges={ B: ['Phiy'] }),
-    CB: default.Frame2d(),
-    DC: default.Frame2d(),
+    BA: bvp.Frame2d(hinges={ B: ['Phiy'] }),
+    CB: bvp.Frame2d(),
+    DC: bvp.Frame2d(),
   },
 
   expected: super.expected {
@@ -78,9 +76,9 @@ local qz_hinge_uz_rightward(q, l) = qz_common(q, l) + {
   },
 
   elements: {
-    AB: default.Frame2d(hinges={ B: ['Uz'] }),
-    BC: default.Frame2d(),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(hinges={ B: ['Uz'] }),
+    BC: bvp.Frame2d(),
+    CD: bvp.Frame2d(),
   },
 
   expected: {
@@ -102,9 +100,9 @@ local qz_hinge_uz_leftward(q, l) = qz_hinge_uz_rightward(q, l) + qz_common(-q, l
   name: 'qz_hinge_uz_leftward',
 
   elements: {
-    BA: default.Frame2d(hinges={ B: ['Uz'] }),
-    CB: default.Frame2d(),
-    DC: default.Frame2d(),
+    BA: bvp.Frame2d(hinges={ B: ['Uz'] }),
+    CB: bvp.Frame2d(),
+    DC: bvp.Frame2d(),
   },
 
   expected: super.expected {
@@ -127,9 +125,9 @@ local qz_hinge_phi_phi(q, l) = qz_common(q, l) + {
   },
 
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Phiy'], C: ['Phiy'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Phiy'], C: ['Phiy'] }),
+    CD: bvp.Frame2d(),
   },
 
   expected: {
@@ -151,9 +149,9 @@ local qz_hinge_phi_phi_variation_1(q, l) = qz_hinge_phi_phi(q, l) + {
   name: 'qz_hinge_phi_phi_variation_1',
 
   elements: {
-    AB: default.Frame2d(hinges={ B: ['Phiy'] }),
-    BC: default.Frame2d(hinges={ C: ['Phiy'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(hinges={ B: ['Phiy'] }),
+    BC: bvp.Frame2d(hinges={ C: ['Phiy'] }),
+    CD: bvp.Frame2d(),
   },
 };
 
@@ -161,9 +159,9 @@ local qz_hinge_phi_phi_variation_2(q, l) = qz_hinge_phi_phi(q, l) + {
   name: 'qz_hinge_phi_phi_variation_2',
 
   elements: {
-    AB: default.Frame2d(hinges={ B: ['Phiy'] }),
-    BC: default.Frame2d(),
-    CD: default.Frame2d(hinges={ C: ['Phiy'] }),
+    AB: bvp.Frame2d(hinges={ B: ['Phiy'] }),
+    BC: bvp.Frame2d(),
+    CD: bvp.Frame2d(hinges={ C: ['Phiy'] }),
   },
 };
 
@@ -171,9 +169,9 @@ local qz_hinge_phi_phi_variation_3(q, l) = qz_hinge_phi_phi(q, l) + {
   name: 'qz_hinge_phi_phi_variation_3',
 
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Phiy'] }),
-    CD: default.Frame2d(hinges={ C: ['Phiy'] }),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Phiy'] }),
+    CD: bvp.Frame2d(hinges={ C: ['Phiy'] }),
   },
 };
 
@@ -186,9 +184,9 @@ local qz_hinge_uz_phi_rightward(q, l) = qz_common(q, l) {
   },
 
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Uz'], C: ['Phiy'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Uz'], C: ['Phiy'] }),
+    CD: bvp.Frame2d(),
   },
 
   expected: {
@@ -210,9 +208,9 @@ local qz_hinge_uz_phi_leftward(q, l) = qz_hinge_uz_phi_rightward(q, l) + qz_comm
   name: 'qz_hinge_uz_phi_leftward',
 
   elements: {
-    BA: default.Frame2d(),
-    CB: default.Frame2d(hinges={ B: ['Uz'], C: ['Phiy'] }),
-    DC: default.Frame2d(),
+    BA: bvp.Frame2d(),
+    CB: bvp.Frame2d(hinges={ B: ['Uz'], C: ['Phiy'] }),
+    DC: bvp.Frame2d(),
   },
 
   expected: super.expected {
@@ -300,9 +298,9 @@ local fz_hinge_uz_rightward_2(F, l) = fz_hinge_uz_rightward_1(F, l) + {
   name: 'fz_hinge_uz_rightward_2',
 
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Uz'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Uz'] }),
+    CD: bvp.Frame2d(),
   },
 
   expected: {
@@ -321,9 +319,9 @@ local fz_hinge_uz_rightward_2(F, l) = fz_hinge_uz_rightward_1(F, l) + {
 local fz_hinge_uz_leftward_2(F, l) = fz_hinge_uz_rightward_2(F, l) + {
   name: 'fz_hinge_uz_leftward_2',
   elements: {
-    BA: default.Frame2d(),
-    CB: default.Frame2d(hinges={ B: ['Uz'] }),
-    DC: default.Frame2d(),
+    BA: bvp.Frame2d(),
+    CB: bvp.Frame2d(hinges={ B: ['Uz'] }),
+    DC: bvp.Frame2d(),
   },
 
   expected: super.expected + {
@@ -389,9 +387,9 @@ local fz_hinge_uz_phi_rightward_2(F, l) = fz_common(F, l) + {
   dirichlet: qz_hinge_uz_phi_rightward(0, l).dirichlet,
 
   elements: {
-    AB: default.Frame2d(hinges={ B: ['Uz'] }),
-    BC: default.Frame2d(hinges={ C: ['Phiy'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(hinges={ B: ['Uz'] }),
+    BC: bvp.Frame2d(hinges={ C: ['Phiy'] }),
+    CD: bvp.Frame2d(),
   },
 
   expected: {
@@ -411,9 +409,9 @@ local fz_hinge_uz_phi_leftward_2(F, l) = fz_hinge_uz_phi_rightward_2(F, l) + {
   name: 'fz_hinge_uz_phi_leftward_2',
 
   elements: {
-    BA: default.Frame2d(hinges={ B: ['Uz'] }),
-    CB: default.Frame2d(hinges={ C: ['Phiy'] }),
-    DC: default.Frame2d(),
+    BA: bvp.Frame2d(hinges={ B: ['Uz'] }),
+    CB: bvp.Frame2d(hinges={ C: ['Phiy'] }),
+    DC: bvp.Frame2d(),
   },
 
   expected: super.expected + {
@@ -443,9 +441,9 @@ local fz_hinge_uz_uz_fails(F, l) = fz_common(F, l) + hinge_fails {
   name: 'fz_hinge_uz_uz_fails',
 
   elements: {
-    BA: default.Frame2d(),
-    CB: default.Frame2d(hinges={ B: ['Uz'], C: ['Uz'] }),
-    DC: default.Frame2d(),
+    BA: bvp.Frame2d(),
+    CB: bvp.Frame2d(hinges={ B: ['Uz'], C: ['Uz'] }),
+    DC: bvp.Frame2d(),
   },
 };
 
@@ -453,9 +451,9 @@ local fz_hinge_uz_phi_left_fails(F, l) = fz_common(F, l) + hinge_fails {
   name: 'fz_hinge_uz_phi_left_fails',
 
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Uz', 'Phiy'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Uz', 'Phiy'] }),
+    CD: bvp.Frame2d(),
   },
 };
 
@@ -463,9 +461,9 @@ local fz_hinge_uz_phi_right_fails(F, l) = fz_common(F, l) + hinge_fails {
   name: 'fz_hinge_uz_phi_right_fails',
 
   elements: {
-    BA: default.Frame2d(),
-    CB: default.Frame2d(hinges={ B: ['Uz', 'Phiy'] }),
-    DC: default.Frame2d(),
+    BA: bvp.Frame2d(),
+    CB: bvp.Frame2d(hinges={ B: ['Uz', 'Phiy'] }),
+    DC: bvp.Frame2d(),
   },
 };
 
@@ -473,9 +471,9 @@ local fz_hinge_ux_ux_fails(F, l) = fz_common(F, l) + hinge_fails + {
   name: 'fz_hinge_ux_ux_fails',
 
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Ux'], C: ['Ux'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Ux'], C: ['Ux'] }),
+    CD: bvp.Frame2d(),
   },
 };
 

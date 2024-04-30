@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local beams_with_shear_hinge(q, l, E, Iyy, hinge) = {
   name: 'beams_shear_hinge',
 
@@ -17,8 +15,8 @@ local beams_with_shear_hinge(q, l, E, Iyy, hinge) = {
 
   elements: {
     assert hinge == 'left' || hinge == 'right',
-    AB: default.Frame2d(hinges=if hinge == 'left' then { B: ['Uz'] } else {}),
-    BC: default.Frame2d(hinges=if hinge == 'right' then { B: ['Uz'] } else {}),
+    AB: bvp.Frame2d(hinges=if hinge == 'left' then { B: ['Uz'] } else {}),
+    BC: bvp.Frame2d(hinges=if hinge == 'right' then { B: ['Uz'] } else {}),
   },
 
   dirichlet: {
@@ -79,8 +77,8 @@ local beams_with_rot_hinge(q, l, E, Iyy, hinge) = {
 
   elements: {
     assert hinge == 'left' || hinge == 'right',
-    AB: default.Frame2d(hinges=if hinge == 'left' then { B: ['Phiy'] } else {}),
-    BC: default.Frame2d(hinges=if hinge == 'right' then { B: ['Phiy'] } else {}),
+    AB: bvp.Frame2d(hinges=if hinge == 'left' then { B: ['Phiy'] } else {}),
+    BC: bvp.Frame2d(hinges=if hinge == 'right' then { B: ['Phiy'] } else {}),
   },
 
   dirichlet: {

@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local bridge(a) = {
   name: 'bridge_%.2f' % a,
   description: 'Truss bridge with vertical nodal loads',
@@ -25,7 +23,7 @@ local bridge(a) = {
   crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   local trusses(ids) = {
-    [id]: default.Truss2d()
+    [id]: bvp.Truss2d()
     for id in ids
   },
 

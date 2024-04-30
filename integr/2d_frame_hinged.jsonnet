@@ -28,17 +28,10 @@ local frame(l, h, Ih, Iv) = {
     },
   },
 
-  local frame(n0, n1, cs) = {
-    kind: 'frame2d',
-    material: 'default',
-    cs: cs,
-    nodes: [n0, n1],
-  },
-
   elements: {
-    LEFT: frame('A', 'C', 'pillar'),
-    RIGHT: frame('D', 'B', 'pillar'),
-    TOP: frame('C', 'D', 'beam'),
+    LEFT: bvp.Frame2d(nodes=['A', 'C'], cs='pillar'),
+    RIGHT: bvp.Frame2d(nodes=['D', 'B'], cs='pillar'),
+    TOP: bvp.Frame2d(nodes=['C', 'D'], cs='beam'),
   },
 
   dirichlet: {

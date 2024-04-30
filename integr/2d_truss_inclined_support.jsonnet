@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local triangle(angle) = {
   name: 'triangle_%d' % angle,
   description: 'Truss triangle with inclined support',
@@ -20,9 +18,9 @@ local triangle(angle) = {
   crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
-    AB: default.Truss2d(),
-    AC: default.Truss2d(),
-    CB: default.Truss2d(),
+    AB: bvp.Truss2d(),
+    AC: bvp.Truss2d(),
+    CB: bvp.Truss2d(),
   },
 
   dirichlet: {

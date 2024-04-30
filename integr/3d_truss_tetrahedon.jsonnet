@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local tetrahedon(Fz, Fy, l, b, h) = {
   // name: 'tetrahedon_%g_%g_%g_%g' % [Fz, l, b, h],
   name: 'tetrahedon_%f_%f' % [Fz, Fy],
@@ -18,9 +16,9 @@ local tetrahedon(Fz, Fy, l, b, h) = {
   crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
-    AB: default.Truss3d(),
-    AC: default.Truss3d(),
-    AD: default.Truss3d(),
+    AB: bvp.Truss3d(),
+    AC: bvp.Truss3d(),
+    AD: bvp.Truss3d(),
   },
 
   dirichlet: {

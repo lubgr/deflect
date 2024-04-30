@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local multi_load_interval_inclined_beam(q0, q1, F, M, l, angle) = {
   name: 'multi_load_interval_inclined_beam',
   description: 'Inclined beam with multiple element loads',
@@ -18,7 +16,7 @@ local multi_load_interval_inclined_beam(q0, q1, F, M, l, angle) = {
   crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
-    AB: default.Frame2d(),
+    AB: bvp.Frame2d(),
   },
 
   dirichlet: {
@@ -79,7 +77,7 @@ local multi_torque_beam = {
   crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
-    AB: default.Frame2d(),
+    AB: bvp.Frame2d(),
   },
 
   dirichlet: {

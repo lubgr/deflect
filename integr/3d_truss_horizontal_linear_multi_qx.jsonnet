@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 {
   name: 'horizontal_linear_multi_nx',
 
@@ -14,7 +12,7 @@ local default = bvp.Defaults();
   },
 
   elements: {
-    AB: default.Truss3d(),
+    AB: bvp.Truss3d(),
   },
 
   material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),

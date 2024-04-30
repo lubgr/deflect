@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local common(l) = {
   nodes: {
     A: [0, 0, 0],
@@ -15,9 +13,9 @@ local common(l) = {
   crosssection: bvp.Generic('default', A=0.01, Iyy=10e-6),
 
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Phiy'], C: ['Phiy'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Phiy'], C: ['Phiy'] }),
+    CD: bvp.Frame2d(),
   },
 
   dirichlet: {

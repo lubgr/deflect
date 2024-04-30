@@ -1,14 +1,12 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local common(l, E, Iyy) = {
   material: bvp.LinElast('default', E=E, nu=0.3, rho=1),
   crosssection: bvp.Generic('default', A=1, Iyy=Iyy),
 
   elements: {
-    AB: default.Frame2d(),
+    AB: bvp.Frame2d(),
   },
 };
 

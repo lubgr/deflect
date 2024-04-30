@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local horizontal_axial_hinge(hinge) = {
   name: 'horizontal_axial_hinge',
 
@@ -17,8 +15,8 @@ local horizontal_axial_hinge(hinge) = {
 
   elements: {
     assert hinge == 'left' || hinge == 'right',
-    AB: default.Truss3d(hinges=if hinge == 'right' then { B: ['Ux'] } else {}),
-    BC: default.Truss3d(hinges=if hinge == 'left' then { B: ['Ux'] } else {}),
+    AB: bvp.Truss3d(hinges=if hinge == 'right' then { B: ['Ux'] } else {}),
+    BC: bvp.Truss3d(hinges=if hinge == 'left' then { B: ['Ux'] } else {}),
   },
 
   material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),

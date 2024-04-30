@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local frame_inclined(l, w, A, Iyy) = {
   name: 'frame_inclined_support',
   description: 'Horizontal frame with inclined support',
@@ -16,7 +14,7 @@ local frame_inclined(l, w, A, Iyy) = {
   crosssection: bvp.Generic('default', A=A, Iyy=Iyy),
 
   elements: {
-    AB: default.Frame2d(),
+    AB: bvp.Frame2d(),
   },
 
   dirichlet: {

@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local F = 10e3;
 
 local structure(alpha, beta, gamma, a) = {
@@ -22,16 +20,16 @@ local structure(alpha, beta, gamma, a) = {
   crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
-    AN1: default.Truss2d(nodes=['A', 'N1']),
-    N1B: default.Truss2d(nodes=['N1', 'B']),
-    AC: default.Truss2d(nodes=['A', 'C']),
-    CN2: default.Truss2d(nodes=['C', 'N2']),
-    N2N3: default.Truss2d(nodes=['N2', 'N3']),
-    N1N2: default.Truss2d(nodes=['N1', 'N2']),
-    AN2: default.Truss2d(nodes=['A', 'N2']),
-    CN1: default.Truss2d(nodes=['C', 'N1']),
-    N1N3: default.Truss2d(nodes=['N1', 'N3']),
-    N2B: default.Truss2d(nodes=['N2', 'B']),
+    AN1: bvp.Truss2d(nodes=['A', 'N1']),
+    N1B: bvp.Truss2d(nodes=['N1', 'B']),
+    AC: bvp.Truss2d(nodes=['A', 'C']),
+    CN2: bvp.Truss2d(nodes=['C', 'N2']),
+    N2N3: bvp.Truss2d(nodes=['N2', 'N3']),
+    N1N2: bvp.Truss2d(nodes=['N1', 'N2']),
+    AN2: bvp.Truss2d(nodes=['A', 'N2']),
+    CN1: bvp.Truss2d(nodes=['C', 'N1']),
+    N1N3: bvp.Truss2d(nodes=['N1', 'N3']),
+    N2B: bvp.Truss2d(nodes=['N2', 'B']),
   },
 
   neumann: {

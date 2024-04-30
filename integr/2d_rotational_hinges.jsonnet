@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local tilted_l = {
   name: 'tilted_l',
   description: 'Example structure with nodal/element loads and rotational hinges',
@@ -51,25 +49,25 @@ local tilted_l = {
 
 local tilted_l_hinges1 = tilted_l {
   elements: {
-    AB: default.Frame2d(hinges={ B: ['Phiy'] }),
-    BC: default.Frame2d(hinges={ C: ['Phiy'] }),
-    CD: default.Frame2d(hinges={}),
+    AB: bvp.Frame2d(hinges={ B: ['Phiy'] }),
+    BC: bvp.Frame2d(hinges={ C: ['Phiy'] }),
+    CD: bvp.Frame2d(hinges={}),
   },
 };
 
 local tilted_l_hinges2 = tilted_l {
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Phiy'] }),
-    CD: default.Frame2d(hinges={ C: ['Phiy'] }),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Phiy'] }),
+    CD: bvp.Frame2d(hinges={ C: ['Phiy'] }),
   },
 };
 
 local tilted_l_hinges3 = tilted_l {
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(hinges={ B: ['Phiy'], C: ['Phiy'] }),
-    CD: default.Frame2d(),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(hinges={ B: ['Phiy'], C: ['Phiy'] }),
+    CD: bvp.Frame2d(),
   },
 };
 
@@ -92,13 +90,13 @@ local double_plateau = {
   crosssection: bvp.Generic('default', A=0.01, Iyy=10e-6),
 
   elements: {
-    AB: default.Frame2d(),
-    BC: default.Frame2d(),
-    CD: default.Frame2d(),
-    DE: default.Frame2d(),
-    EF: default.Frame2d(),
-    EG: default.Frame2d(),
-    GH: default.Frame2d(),
+    AB: bvp.Frame2d(),
+    BC: bvp.Frame2d(),
+    CD: bvp.Frame2d(),
+    DE: bvp.Frame2d(),
+    EF: bvp.Frame2d(),
+    EG: bvp.Frame2d(),
+    GH: bvp.Frame2d(),
   },
 
   dirichlet: {
@@ -157,21 +155,21 @@ local double_plateau = {
 
 local double_plateau_hinges1 = double_plateau {
   elements: super.elements + {
-    CD: default.Frame2d(hinges={ C: ['Phiy'], D: ['Phiy'] }),
+    CD: bvp.Frame2d(hinges={ C: ['Phiy'], D: ['Phiy'] }),
   },
 };
 
 local double_plateau_hinges2 = double_plateau {
   elements: super.elements + {
-    BC: default.Frame2d(hinges={ C: ['Phiy'] }),
-    CD: default.Frame2d(hinges={ D: ['Phiy'] }),
+    BC: bvp.Frame2d(hinges={ C: ['Phiy'] }),
+    CD: bvp.Frame2d(hinges={ D: ['Phiy'] }),
   },
 };
 
 local double_plateau_hinges3 = double_plateau {
   elements: super.elements + {
-    BC: default.Frame2d(hinges={ C: ['Phiy'] }),
-    DE: default.Frame2d(hinges={ D: ['Phiy'] }),
+    BC: bvp.Frame2d(hinges={ C: ['Phiy'] }),
+    DE: bvp.Frame2d(hinges={ D: ['Phiy'] }),
   },
 };
 

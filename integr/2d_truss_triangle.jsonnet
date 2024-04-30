@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 local triangle(H, V, a) = {
   name: 'triangle_%.2f_%.2f_%.2f' % [H, V, a],
   description: 'Truss triangle with H = %.2f, V = %.2f, a = %.2f' % [H, V, a],
@@ -17,9 +15,9 @@ local triangle(H, V, a) = {
   crosssection: bvp.Rectangle('default', b=0.1, h=0.1),
 
   elements: {
-    AB: default.Truss2d(),
-    AC: default.Truss2d(),
-    CB: default.Truss2d(),
+    AB: bvp.Truss2d(),
+    AC: bvp.Truss2d(),
+    CB: bvp.Truss2d(),
   },
 
   dirichlet: {

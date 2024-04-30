@@ -96,21 +96,18 @@
       },
     },
 
-  Defaults(material='default', cs='default')::
-    {
-      local element(nodes, hinges, kind) = {
-        kind: kind,
-        material: material,
-        cs: cs,
-        [if std.length(nodes) > 0 then 'nodes']: nodes,
-        [if std.length(hinges) > 0 then 'hinges']: hinges,
-      },
+  local element(nodes, hinges, kind, material, cs) = {
+    kind: kind,
+    [if material != null then 'material']: material,
+    [if cs != null then 'cs']: cs,
+    [if std.length(nodes) > 0 then 'nodes']: nodes,
+    [if std.length(hinges) > 0 then 'hinges']: hinges,
+  },
 
-      Truss2d(nodes=[], hinges={})::
-        element(nodes, hinges, 'truss2d'),
-      Truss3d(nodes=[], hinges={})::
-        element(nodes, hinges, 'truss3d'),
-      Frame2d(nodes=[], hinges={})::
-        element(nodes, hinges, 'frame2d'),
-    },
+  Truss2d(nodes=[], hinges={}, material=null, cs=null)::
+    element(nodes, hinges, 'truss2d', material, cs),
+  Truss3d(nodes=[], hinges={}, material=null, cs=null)::
+    element(nodes, hinges, 'truss3d', material, cs),
+  Frame2d(nodes=[], hinges={}, material=null, cs=null)::
+    element(nodes, hinges, 'frame2d', material, cs),
 }

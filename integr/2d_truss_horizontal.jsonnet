@@ -2,7 +2,6 @@ local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
 local l = 1.0;
-local default = bvp.Defaults();
 
 local single = {
   nodes: {
@@ -11,7 +10,7 @@ local single = {
   },
 
   elements: {
-    AZ: default.Truss2d(),
+    AZ: bvp.Truss2d(),
   },
 
   material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
@@ -35,7 +34,7 @@ local multi = single {
   },
 
   elements: {
-    [elmt]: default.Truss2d()
+    [elmt]: bvp.Truss2d()
     for elmt in ['AB', 'BC', 'CD', 'DE', 'EF', 'FZ']
   },
 
@@ -226,7 +225,7 @@ local single_ux = single {
   description: 'Horizontal line, single truss ux prescribed',
 
   elements: {
-    AZ: default.Truss2d(),
+    AZ: bvp.Truss2d(),
   },
 
   dirichlet: {

@@ -1,8 +1,6 @@
 local bvp = import 'bvp.libsonnet';
 local test = import 'test.libsonnet';
 
-local default = bvp.Defaults();
-
 {
   // This boundary value problem is published on https://labs.degreetutors.com, which links against
   // the spreadsheet
@@ -106,7 +104,7 @@ local default = bvp.Defaults();
     [-2.9156, 0.5528, 29.6216],
   ]),
 
-  elements: indexPlusOneToKey(std.map(function(nodes) default.Truss3d(nodes=nodes), [
+  elements: indexPlusOneToKey(std.map(function(nodes) bvp.Truss3d(nodes=nodes), [
     ['8', '4'],
     ['47', '55'],
     ['11', '8'],
