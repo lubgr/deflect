@@ -11,7 +11,6 @@
 # checkout.
 
 set -x
-set -e
 
 dir=$(mktemp -d)
 
@@ -20,6 +19,11 @@ trap 'rm -rf ${dir}' EXIT
 git clone . "${dir}"
 git diff --staged | git -C "${dir}" apply --index --allow-empty
 
-cd "${dir}"
-
+cd "${dir}" || exit 1
 pre-commit run "$@"
+success=$?
+cd - || exit 1
+
+git -C "${dir}" diff | git apply
+
+exit "${success}"
