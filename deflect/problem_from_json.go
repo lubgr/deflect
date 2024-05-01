@@ -182,47 +182,11 @@ func translateElements(
 	var err error
 
 	for id, desc := range from {
-		mat, errLookup := material(desc.Material, desc.CS)
-		if errLookup != nil {
-			err = errors.Join(
-				err,
-				fmt.Errorf("couldn't lookup material for element %v: %w", id, errLookup),
-			)
-			continue
-		}
-
-		n0, n1, errNodes := determineNodes(id, desc.Nodes, nodes)
-		if errNodes != nil {
-			err = errors.Join(err, errNodes)
-			continue
-		}
-
-		switch desc.Kind {
-		case "truss2d", "truss3d":
-			hinges, errHinges := formHingeMap(desc.Hinges, n0.ID, n1.ID)
-			truss, errCreate := func() (Element, error) {
-				if desc.Kind == "truss2d" {
-					return NewTruss2d(id, n0, n1, &mat, hinges)
-				}
-				return NewTruss3d(id, n0, n1, &mat, hinges)
-			}()
-
-			if errJoined := errors.Join(errHinges, errCreate); errJoined != nil {
-				err = errors.Join(err, fmt.Errorf("create truss '%v': %w", id, errJoined))
-				continue
-			}
-
-			elements = append(elements, truss)
-		case "frame2d":
-			hinges, errHinges := formHingeMap(desc.Hinges, n0.ID, n1.ID)
-			frame, errCreate := NewFrame2d(id, n0, n1, &mat, hinges)
-
-			if errJoined := errors.Join(errHinges, errCreate); errJoined != nil {
-				err = errors.Join(err, fmt.Errorf("create 2d frame '%v': %w", id, errJoined))
-				continue
-			}
-
-			elements = append(elements, frame)
+		elmt, errElmt := translateElement(id, &desc, nodes, material)
+		if errElmt != nil {
+			err = errors.Join(err, fmt.Errorf("instantiate element '%v': %w", id, errElmt))
+		} else {
+			elements = append(elements, elmt)
 		}
 	}
 
@@ -231,6 +195,39 @@ func translateElements(
 	}
 
 	return elements, err
+}
+
+func translateElement(
+	id string,
+	from *elmtDescription,
+	nodes []Node,
+	material func(string, string) (Material, error),
+) (Element, error) {
+	mat, err := material(from.Material, from.CS)
+	if err != nil {
+		return nil, fmt.Errorf("material lookup: %w", err)
+	}
+
+	n0, n1, err := determineNodes(id, from.Nodes, nodes)
+	if err != nil {
+		return nil, fmt.Errorf("connect to nodes: %w", err)
+	}
+
+	hinges, err := formHingeMap(from.Hinges, n0.ID, n1.ID)
+	if err != nil {
+		return nil, fmt.Errorf("hinge setup: %w", err)
+	}
+
+	switch from.Kind {
+	case "truss2d":
+		return NewTruss2d(id, n0, n1, &mat, hinges)
+	case "truss3d":
+		return NewTruss3d(id, n0, n1, &mat, hinges)
+	case "frame2d":
+		return NewFrame2d(id, n0, n1, &mat, hinges)
+	}
+
+	return nil, fmt.Errorf("unknown element type '%v'", from.Kind)
 }
 
 // determineNodes looks up pointers to nodes from the given slice of nodes, using either nodeIDs
