@@ -13,7 +13,7 @@ local with_axial_hinge(q, F, l) = {
   },
 
   material: bvp.LinElast('default', E=210000e6, nu=0.3, rho=1),
-  crosssection: bvp.Generic('default', A=0.01, Iyy=10e-6),
+  crosssection: bvp.Generic('default', A=0.01, Iyy=10e-6, Izz=10e-6),
 
   elements: {
     AD: bvp.Frame2d(),

@@ -84,9 +84,10 @@ type Material struct {
 // CrossSection provides access to all relevant geometric properties of a beam, truss, or frame
 // cross section.
 type CrossSection interface {
-	// Area returns the cross section's area in m^2
 	Area() float64
 	Iyy() float64
+	Izz() float64
+	RollAngle() float64
 }
 
 // NeumannElementBC is an opaque handle to be downcast by element implementations. It is always

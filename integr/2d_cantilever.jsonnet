@@ -8,7 +8,7 @@ local common(l, E, Iyy, fix) = {
   },
 
   material: bvp.LinElast('default', E=E, nu=0.3, rho=1),
-  crosssection: bvp.Generic('default', A=1, Iyy=Iyy),
+  crosssection: bvp.Generic('default', A=1, Iyy=Iyy, Izz=10e-6),
 
   elements: {
     AB: bvp.Frame2d(),

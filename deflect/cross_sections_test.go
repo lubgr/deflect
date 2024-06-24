@@ -6,7 +6,7 @@ import (
 )
 
 func TestRectangularArea(t *testing.T) {
-	r, _ := NewRectangularCrossSection(12.3, 45.6)
+	r, _ := NewRectangularCrossSection(12.3, 45.6, 0.0)
 	expected := 12.3 * 45.6
 	actual := r.Area()
 
@@ -17,7 +17,7 @@ func TestRectangularArea(t *testing.T) {
 
 func TestRectangularIyy(t *testing.T) {
 	b, h := 20.0, 30.0
-	r, _ := NewRectangularCrossSection(b, h)
+	r, _ := NewRectangularCrossSection(b, h, 0.0)
 	expected := b * math.Pow(h, 3) / 12.0
 	actual := r.Iyy()
 
@@ -27,15 +27,21 @@ func TestRectangularIyy(t *testing.T) {
 }
 
 func TestRectangularNegativeDimensionsCauseConstructionError(t *testing.T) {
-	cases := []struct{ b, h float64 }{
-		{b: -1, h: 1},
-		{b: 1, h: -1},
-		{b: -1, h: -1},
+	cases := []struct{ b, h, roll float64 }{
+		{b: -1, h: 1, roll: 0},
+		{b: 1, h: -1, roll: 0},
+		{b: -1, h: -1, roll: 0.123},
+		{b: 1, h: 1, roll: -0.5},
 	}
 
 	for _, test := range cases {
-		if _, err := NewRectangularCrossSection(test.b, test.h); err == nil {
-			t.Errorf("Expected rectangular profile construction to fail with b/h = %v/%v", test.b, test.h)
+		if _, err := NewRectangularCrossSection(test.b, test.h, test.roll); err == nil {
+			t.Errorf(
+				"Expected rectangular profile construction to fail with b/h/roll = %v/%v/%v",
+				test.b,
+				test.h,
+				test.roll,
+			)
 		}
 	}
 }
@@ -45,10 +51,11 @@ func TestConstantsCrossSectionConstruction(t *testing.T) {
 		params  map[string]float64
 		failure bool
 	}{
-		{params: map[string]float64{"A": 1.0, "Iyy": 1.0}, failure: false},
+		{params: map[string]float64{"A": 1.0, "Iyy": 1.0, "Izz": 1.0}, failure: false},
 		{params: map[string]float64{"A": -1.0, "Iyy": 1.0}, failure: true},
-		{params: map[string]float64{"A": 1.0, "Iyy": -1.0}, failure: true},
-		{params: map[string]float64{"A": 0, "Iyy": 0}, failure: true},
+		{params: map[string]float64{"A": 1.0, "Iyy": -1.0, "Izz": 1.0}, failure: true},
+		{params: map[string]float64{"A": 0, "Iyy": 0, "Izz": 0}, failure: true},
+		{params: map[string]float64{}, failure: true},
 	}
 
 	for _, test := range cases {

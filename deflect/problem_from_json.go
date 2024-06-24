@@ -346,11 +346,12 @@ func translateCrossSections(from map[string]csDescription) (map[string]CrossSect
 		case "rectangle":
 			b, foundB := desc.Parameter["b"]
 			h, foundH := desc.Parameter["h"]
+			roll := desc.Parameter["roll"] // Default zero is desired
 
 			if !foundB || !foundH {
 				fail("cross section parameters 'b', and/or 'h' not found")
 				continue
-			} else if rect, err := NewRectangularCrossSection(b, h); err != nil {
+			} else if rect, err := NewRectangularCrossSection(b, h, roll); err != nil {
 				fail("create rectangular cross section: %w", err)
 			} else {
 				cs[id] = rect

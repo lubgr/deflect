@@ -8,7 +8,7 @@ local test = import 'test.libsonnet';
   name: 'power_pole',
 
   material: bvp.LinElast('default', E=200000e6, nu=0.3, rho=78000 / 9.81),
-  crosssection: bvp.Generic('default', A=0.05, Iyy=10e-6),
+  crosssection: bvp.Generic('default', A=0.05, Iyy=10e-6, Izz=10e-6),
 
   // Avoid typing out numeric keys all the time:
   local indexPlusOneToKey(array) = {

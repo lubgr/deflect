@@ -11,7 +11,7 @@ local frame_inclined(l, w, A, Iyy) = {
   },
 
   material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: bvp.Generic('default', A=A, Iyy=Iyy),
+  crosssection: bvp.Generic('default', A=A, Iyy=Iyy, Izz=10e-6),
 
   elements: {
     AB: bvp.Frame2d(),

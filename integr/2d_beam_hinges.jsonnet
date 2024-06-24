@@ -11,7 +11,7 @@ local beams_with_shear_hinge(q, l, E, Iyy, hinge) = {
   },
 
   material: bvp.LinElast('default', E=E, nu=0.3, rho=1),
-  crosssection: bvp.Generic('default', A=0.01, Iyy=Iyy),
+  crosssection: bvp.Generic('default', A=0.01, Iyy=Iyy, Izz=10e-6),
 
   elements: {
     assert hinge == 'left' || hinge == 'right',
@@ -73,7 +73,7 @@ local beams_with_rot_hinge(q, l, E, Iyy, hinge) = {
   },
 
   material: bvp.LinElast('default', E=E, nu=0.3, rho=1),
-  crosssection: bvp.Generic('default', A=0.01, Iyy=Iyy),
+  crosssection: bvp.Generic('default', A=0.01, Iyy=Iyy, Izz=10e-6),
 
   elements: {
     assert hinge == 'left' || hinge == 'right',

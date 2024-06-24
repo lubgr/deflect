@@ -74,24 +74,27 @@
       },
     },
 
-  Rectangle(id, b, h)::
+  Rectangle(id, b, h, roll=0)::
     {
       [id]: {
         kind: 'rectangle',
         parameter: {
           b: b,
           h: h,
+          [if roll != 0 then 'roll']: roll,
         },
       },
     },
 
-  Generic(id, A, Iyy)::
+  Generic(id, A, Iyy, Izz, roll=0)::
     {
       [id]: {
         kind: 'constants',
         parameter: {
           A: A,
           Iyy: Iyy,
+          Izz: Izz,
+          [if roll != 0 then 'roll']: roll,
         },
       },
     },

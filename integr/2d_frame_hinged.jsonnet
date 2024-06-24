@@ -11,22 +11,8 @@ local frame(l, h, Ih, Iv) = {
     },
 
   material: bvp.LinElast('default', E=30000e6, nu=0.3, rho=1),
-  crosssection: {
-    beam: {
-      kind: 'constants',
-      parameter: {
-        A: 0.01,
-        Iyy: Ih,
-      },
-    },
-    pillar: {
-      kind: 'constants',
-      parameter: {
-        A: 0.01,
-        Iyy: Iv,
-      },
-    },
-  },
+  crosssection: bvp.Generic('beam', A=0.01, Iyy=Ih, Izz=10e-6) +
+                bvp.Generic('pillar', A=0.01, Iyy=Iv, Izz=10e-6),
 
   elements: {
     LEFT: bvp.Frame2d(nodes=['A', 'C'], cs='pillar'),

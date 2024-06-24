@@ -57,7 +57,8 @@ func TestTruss2dLocalTangent(t *testing.T) {
 		n1 := &Node{ID: "B", X: 10, Z: -1}
 		material := exampleMat
 		material.YoungsModulus = test.youngs
-		material.CrossSection, _ = NewRectangularCrossSection(test.b, test.h)
+		roll := 0.0
+		material.CrossSection, _ = NewRectangularCrossSection(test.b, test.h, roll)
 		common, _ := newOneDimElement("AB", n0, n1, &material)
 		truss := &truss2d{oneDimElement: common, hinges: nil}
 		actual := truss.localNoHingeTangent(5)

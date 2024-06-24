@@ -3,7 +3,7 @@ package deflect
 import "testing"
 
 var exampleMat = Material{
-	CrossSection: &rectangular{0.1, 0.1},
+	CrossSection: &rectangular{b: 0.1, h: 0.1, roll: 0},
 	LinearElastic: LinearElastic{
 		YoungsModulus: 100000.0 / (1e-3 * 1e-3),
 		PoissonsRatio: 0.3,
