@@ -22,6 +22,7 @@ Depending on the workflow, these optional tools might make sense, too:
 - [Jsonnet](https://jsonnet.org) and [jq](https://jqlang.github.io/jq) for working with integration
   test specifications. While the test binary links against a Jsonnet package to evaluate these files
   on the fly, both tools can be helpful for inspection and debugging `.jsonnet` files directly.
+- [Delve](https://github.com/go-delve/delve) if you want to debug Go code.
 - [wazero](https://wazero.io) for running Webassembly binaries. Any binary installation should work
   (package manager, `go install`, etc.). [wasmtime](https://wasmtime.dev) should generally work as
   well, it doesn't seem to have an option to mount files from the filesystem into the runtime yet -
