@@ -125,15 +125,10 @@ func (t *truss2d) AddLoad(bc NeumannElementBC) bool {
 	var kind Dof
 
 	loadDispatch(bc,
-		func(load *neumannConcentrated) {
-			kind = load.kind
-		},
-		func(load *neumannConstant) {
-			kind = load.kind
-		},
-		func(load *neumannLinear) {
-			kind = load.kind
-		})
+		func(load *neumannConcentrated) { kind = load.kind },
+		func(load *neumannConstant) { kind = load.kind },
+		func(load *neumannLinear) { kind = load.kind },
+	)
 
 	if kind == Ux {
 		return t.oneDimElement.AddLoad(bc)
