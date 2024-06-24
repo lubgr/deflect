@@ -7,11 +7,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type beam2d struct {
-	oneDimElement
-	hinges condenser
-}
-
 // newBeam2d returns a 2d beam element implementation.
 func newBeam2d(
 	id string,
@@ -34,6 +29,11 @@ func newBeam2d(
 	}
 
 	return &beam2d{oneDimElement: common, hinges: condenser}, nil
+}
+
+type beam2d struct {
+	oneDimElement
+	hinges condenser
 }
 
 func (b *beam2d) Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense) {

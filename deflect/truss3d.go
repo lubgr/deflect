@@ -7,12 +7,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type truss3d struct {
-	// Much logic is shared between the 2d and the 3d implementation. We delegate to a 2d instance
-	// where possible:
-	truss2d
-}
-
 // NewTruss3d returns a new 3d truss implementation.
 func NewTruss3d(
 	id string,
@@ -33,6 +27,12 @@ func NewTruss3d(
 	}
 
 	return &truss3d{truss2d: *concrete}, nil
+}
+
+type truss3d struct {
+	// Much logic is shared between the 2d and the 3d implementation. We delegate to a 2d instance
+	// where possible:
+	truss2d
 }
 
 func (t *truss3d) Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense) {

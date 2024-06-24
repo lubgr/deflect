@@ -7,11 +7,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type truss2d struct {
-	oneDimElement
-	hinges condenser
-}
-
 // NewTruss2d returns a new linear-elastic 2d truss implementation.
 func NewTruss2d(
 	id string,
@@ -29,6 +24,11 @@ func NewTruss2d(
 	}
 
 	return &truss2d{oneDimElement: common, hinges: condenser}, nil
+}
+
+type truss2d struct {
+	oneDimElement
+	hinges condenser
 }
 
 func (t *truss2d) Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense) {
