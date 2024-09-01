@@ -3,6 +3,8 @@ package deflect
 import (
 	"math"
 	"testing"
+
+	"gonum.org/v1/gonum/floats/scalar"
 )
 
 func TestRectangularArea(t *testing.T) {
@@ -10,7 +12,7 @@ func TestRectangularArea(t *testing.T) {
 	expected := 12.3 * 45.6
 	actual := r.Area()
 
-	if math.Abs(actual-expected) > 1e-10 {
+	if !scalar.EqualWithinAbs(actual, expected, 1e-10) {
 		t.Errorf("Expected area of rectangle to be %v, got %v", expected, actual)
 	}
 }
@@ -21,7 +23,7 @@ func TestRectangularIyy(t *testing.T) {
 	expected := b * math.Pow(h, 3) / 12.0
 	actual := r.Iyy()
 
-	if math.Abs(actual-expected) > 1e-10 {
+	if !scalar.EqualWithinAbs(actual, expected, 1e-10) {
 		t.Errorf("Expected Iyy to be %v, got %v", expected, actual)
 	}
 }
