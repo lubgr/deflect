@@ -13,6 +13,7 @@ type constantsCrossSection struct {
 // constants. The following keys are expected:
 // - A
 // - Iyy
+// - Izz
 // Returns an error if anything is not positive, or if the required parameters can't be found in
 // param.
 func NewConstantsCrossSections(param map[string]float64) (CrossSection, error) {
