@@ -87,6 +87,7 @@ type CrossSection interface {
 	Area() float64
 	Iyy() float64
 	Izz() float64
+	Ixx() float64
 	RollAngle() float64
 }
 

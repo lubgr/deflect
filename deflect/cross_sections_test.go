@@ -28,6 +28,18 @@ func TestRectangularIyy(t *testing.T) {
 	}
 }
 
+func TestRectangularIxx(t *testing.T) {
+	// We test using a square, to cross-validate the formula for rectangles
+	a := 10.0
+	r, _ := NewRectangularCrossSection(a, a, 0.0)
+	expected := 2.25 * math.Pow(a/2, 4)
+	actual := r.Ixx()
+
+	if !scalar.EqualWithinRel(actual, expected, 0.01) {
+		t.Errorf("Expected Ixx to be %v, got %v", expected, actual)
+	}
+}
+
 func TestRectangularNegativeDimensionsCauseConstructionError(t *testing.T) {
 	cases := []struct{ b, h, roll float64 }{
 		{b: -1, h: 1, roll: 0},
@@ -53,10 +65,13 @@ func TestConstantsCrossSectionConstruction(t *testing.T) {
 		params  map[string]float64
 		failure bool
 	}{
-		{params: map[string]float64{"A": 1.0, "Iyy": 1.0, "Izz": 1.0}, failure: false},
-		{params: map[string]float64{"A": -1.0, "Iyy": 1.0}, failure: true},
-		{params: map[string]float64{"A": 1.0, "Iyy": -1.0, "Izz": 1.0}, failure: true},
+		{params: map[string]float64{"A": 1, "Iyy": 1, "Izz": 1}, failure: false},
+		{params: map[string]float64{"A": 1, "Iyy": 1, "Izz": 1, "Ixx": 1}, failure: false},
+		{params: map[string]float64{"A": 1, "Iyy": 1, "Izz": 1, "Ixx": -1}, failure: true},
+		{params: map[string]float64{"A": -1, "Iyy": 1}, failure: true},
+		{params: map[string]float64{"A": 1, "Iyy": -1, "Izz": 1}, failure: true},
 		{params: map[string]float64{"A": 0, "Iyy": 0, "Izz": 0}, failure: true},
+		{params: map[string]float64{"A": 1, "Iyy": 1, "Izz": 1, "unused": -123}, failure: false},
 		{params: map[string]float64{}, failure: true},
 	}
 
