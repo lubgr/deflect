@@ -27,3 +27,8 @@ func directionCosine3d(n0, n1 *Node) (cxx, cxy, cxz float64) {
 
 	return cxx, cxy, cxz
 }
+
+func rotation3d(n0, n1 *Node, roll float64) (t00, t01, t02, t10, t11, t12, t20, t21, t22 float64) {
+	// TODO
+	return 1, 0, 0, 0, 1, 0, 0, 0, 1
+}

@@ -52,8 +52,8 @@ func (b *beam2d) Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense)
 	s2, c2, sc := s*s, c*c, s*c
 
 	l := length(b.n0, b.n1)
-	kl := b.localNoHingeTangent(l)
-	rl := b.localNoHingeLoads(l)
+	kl := b.localNoHingeTangent(l, b.material.Iyy())
+	rl := b.localNoHingeLoads(l, Uz, Phiy)
 
 	b.hinges.reduce(kl, rl)
 
@@ -92,9 +92,9 @@ func (b *beam2d) Assemble(indices EqLayout, k *mat.SymDense, r, d *mat.VecDense)
 	rAdd(phiy1, -rl.AtVec(3))
 }
 
-func (b *beam2d) localNoHingeTangent(l float64) *mat.SymDense {
+func (b *beam2d) localNoHingeTangent(l, inertia float64) *mat.SymDense {
 	k := mat.NewSymDense(4, nil)
-	EI := b.material.YoungsModulus * b.material.Iyy()
+	EI := b.material.YoungsModulus * inertia
 	l2, l3 := l*l, l*l*l
 
 	k.SetSym(0, 0, 12*EI/l3)
@@ -114,51 +114,51 @@ func (b *beam2d) localNoHingeTangent(l float64) *mat.SymDense {
 	return k
 }
 
-func (b *beam2d) localNoHingeLoads(l float64) *mat.VecDense {
-	var rz0, rphiy0, rz1, rphiy1 float64
+func (b *beam2d) localNoHingeLoads(l float64, vert, rot Dof) *mat.VecDense {
+	var ru0, rphi0, ru1, rphi1 float64
 
 	for _, bc := range b.loads {
 		loadDispatch(bc,
 			func(load *neumannConcentrated) {
-				if load.kind == Uz {
-					a, b, fz := load.position/l, 1.0-load.position/l, load.value
-					rz0 += fz * b * b * (3 - 2*b)
-					rz1 += fz * a * a * (3 - 2*a)
-					rphiy0 -= fz * a * b * b * l
-					rphiy1 += fz * b * a * a * l
-				} else if load.kind == Phiy {
-					a, b, my := load.position/l, 1.0-load.position/l, load.value
-					rz0 += my * 6 / l * a * b
-					rz1 -= my * 6 / l * a * b
-					rphiy0 -= my * b * (3*a - 1)
-					rphiy1 -= my * a * (3*b - 1)
+				if load.kind == vert {
+					a, b, f := load.position/l, 1.0-load.position/l, load.value
+					ru0 += f * b * b * (3 - 2*b)
+					ru1 += f * a * a * (3 - 2*a)
+					rphi0 -= f * a * b * b * l
+					rphi1 += f * b * a * a * l
+				} else if load.kind == rot {
+					a, b, m := load.position/l, 1.0-load.position/l, load.value
+					ru0 += m * 6 / l * a * b
+					ru1 -= m * 6 / l * a * b
+					rphi0 -= m * b * (3*a - 1)
+					rphi1 -= m * a * (3*b - 1)
 				}
 			},
 			func(load *neumannConstant) {
-				if load.kind == Uz {
+				if load.kind == vert {
 					q := load.value
-					rz0 += q * l / 2
-					rz1 += q * l / 2
-					rphiy0 -= q * l * l / 12
-					rphiy1 += q * l * l / 12
+					ru0 += q * l / 2
+					ru1 += q * l / 2
+					rphi0 -= q * l * l / 12
+					rphi1 += q * l * l / 12
 				}
 			},
 			func(load *neumannLinear) {
-				if load.kind == Uz {
+				if load.kind == vert {
 					q0, q1 := load.first, load.last
-					rz0 += (7*q0 + 3*q1) * l / 20
-					rz1 += (3*q0 + 7*q1) * l / 20
-					rphiy0 -= (3*q0 + 2*q1) * l * l / 60
-					rphiy1 += (2*q0 + 3*q1) * l * l / 60
+					ru0 += (7*q0 + 3*q1) * l / 20
+					ru1 += (3*q0 + 7*q1) * l / 20
+					rphi0 -= (3*q0 + 2*q1) * l * l / 60
+					rphi1 += (2*q0 + 3*q1) * l * l / 60
 				}
 			})
 	}
 
 	r := mat.NewVecDense(4, nil)
-	r.SetVec(0, rz0)
-	r.SetVec(1, rphiy0)
-	r.SetVec(2, rz1)
-	r.SetVec(3, rphiy1)
+	r.SetVec(0, ru0)
+	r.SetVec(1, rphi0)
+	r.SetVec(2, ru1)
+	r.SetVec(3, rphi1)
 
 	return r
 }
@@ -206,8 +206,6 @@ func (b *beam2d) Interpolate(indices EqLayout, which Fct, d *mat.VecDense) PolyS
 	case FctVz:
 		return transform(func(p PolyPiece) PolyPiece { return p.derive() }, my)
 	}
-
-	// In what follows
 
 	EI := b.material.YoungsModulus * b.material.Iyy()
 	uz0, phiy0, _, _ := b.startNodeValues(indices, d)
@@ -272,8 +270,8 @@ func (b *beam2d) startNodeValues(indices EqLayout, d *mat.VecDense) (uz, phiy, m
 	l := length(b.n0, b.n1)
 	s, c := sineCosine2d(b.n0, b.n1)
 
-	kl := b.localNoHingeTangent(l)
-	rl := b.localNoHingeLoads(l)
+	kl := b.localNoHingeTangent(l, b.material.Iyy())
+	rl := b.localNoHingeLoads(l, Uz, Phiy)
 
 	idx := b.indicesAsArray()
 	ux0, uz0, phiy0 := indices.mapThree(idx[0], idx[1], idx[2])

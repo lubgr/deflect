@@ -225,6 +225,10 @@ func translateElement(
 		return NewTruss3d(id, n0, n1, &mat, hinges)
 	case "frame2d":
 		return NewFrame2d(id, n0, n1, &mat, hinges)
+	case "torsionbar":
+		return NewTorsionBar(id, n0, n1, &mat, hinges)
+	case "frame3d":
+		return NewFrame3d(id, n0, n1, &mat, hinges)
 	}
 
 	return nil, fmt.Errorf("unknown element type '%v'", from.Kind)

@@ -86,7 +86,7 @@
       },
     },
 
-  Generic(id, A, Iyy, Izz, roll=0)::
+  Generic(id, A, Iyy, Izz, Ixx=0, roll=0)::
     {
       [id]: {
         kind: 'constants',
@@ -94,6 +94,7 @@
           A: A,
           Iyy: Iyy,
           Izz: Izz,
+          [if Ixx != 0 then 'Ixx']: Ixx,
           [if roll != 0 then 'roll']: roll,
         },
       },
@@ -107,10 +108,14 @@
     [if std.length(hinges) > 0 then 'hinges']: hinges,
   },
 
+  TorsionBar(nodes=[], hinges={}, material=null, cs=null)::
+    element(nodes, hinges, 'torsionbar', material, cs),
   Truss2d(nodes=[], hinges={}, material=null, cs=null)::
     element(nodes, hinges, 'truss2d', material, cs),
   Truss3d(nodes=[], hinges={}, material=null, cs=null)::
     element(nodes, hinges, 'truss3d', material, cs),
   Frame2d(nodes=[], hinges={}, material=null, cs=null)::
     element(nodes, hinges, 'frame2d', material, cs),
+  Frame3d(nodes=[], hinges={}, material=null, cs=null)::
+    element(nodes, hinges, 'frame3d', material, cs),
 }

@@ -12,3 +12,7 @@ type LinearElastic struct {
 	// Density given in kg/m^3. We assume the Density is constant across every element.
 	Density float64
 }
+
+func (el *LinearElastic) ShearModulus() float64 {
+	return (el.YoungsModulus / (1.0 + el.PoissonsRatio)) / 2.0
+}
